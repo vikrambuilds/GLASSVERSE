@@ -1,0 +1,2158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>GLASSVERSE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Comfortaa:wght@300;400;500;600;700&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--glass-bg:rgba(255,255,255,0.08);
+--glass-border:rgba(255,255,255,0.18);
+--glass-hover:rgba(255,255,255,0.15);
+--glow-blue:rgba(130,200,255,0.5);
+--glow-purple:rgba(200,130,255,0.5);
+--glow-gold:rgba(255,215,100,0.6);
+--text-primary:#e8f0ff;
+--text-secondary:rgba(200,220,255,0.7);
+--safe-top:env(safe-area-inset-top,0px);
+--safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{
+font-family:'Quicksand',sans-serif;
+overflow:hidden;width:100%;height:100%;
+background:#0a0a1a;color:var(--text-primary);
+touch-action:none;user-select:none;
+-webkit-user-select:none;
+-webkit-touch-callout:none;
+-webkit-tap-highlight-color:transparent;
+}
+canvas{position:fixed;top:0;left:0;width:100%;height:100%}
+#bgCanvas{z-index:0}
+#gameCanvas{z-index:1}
+
+/* ===== GLASS COMPONENTS ===== */
+.glass{
+background:var(--glass-bg);
+backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+border:1px solid var(--glass-border);
+border-radius:20px;
+box-shadow:0 8px 32px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.glass-btn{
+background:var(--glass-bg);
+backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);
+border:1px solid var(--glass-border);
+border-radius:14px;
+color:var(--text-primary);
+font-family:'Quicksand',sans-serif;
+font-weight:600;cursor:pointer;
+transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+box-shadow:0 4px 15px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.1);
+position:relative;overflow:hidden;
+-webkit-tap-highlight-color:transparent;
+}
+.glass-btn:active{
+transform:scale(0.95)!important;
+background:var(--glass-hover);
+}
+
+/* ===== MAIN MENU ===== */
+#mainMenu{
+position:fixed;top:0;left:0;width:100%;height:100%;z-index:100;
+display:flex;flex-direction:column;align-items:center;justify-content:center;
+transition:opacity 0.8s,transform 0.8s;
+}
+#mainMenu.hidden{opacity:0;transform:scale(1.05);pointer-events:none}
+.menu-title{
+font-family:'Comfortaa',sans-serif;
+font-size:clamp(2.5rem,8vw,5rem);font-weight:700;
+color:white;text-align:center;margin-bottom:8px;
+letter-spacing:6px;
+text-shadow:0 0 60px rgba(130,200,255,0.5),0 0 120px rgba(200,130,255,0.3);
+animation:titleFloat 4s ease-in-out infinite;
+}
+@keyframes titleFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.menu-subtitle{
+font-size:clamp(0.7rem,2vw,1rem);color:var(--text-secondary);
+letter-spacing:4px;text-transform:uppercase;margin-bottom:40px;
+}
+.menu-buttons{display:flex;flex-direction:column;gap:12px;align-items:center}
+.menu-btn{
+width:240px;padding:15px 24px;font-size:1rem;text-align:center;letter-spacing:1px;
+}
+.menu-btn.primary{
+background:linear-gradient(135deg,rgba(130,200,255,0.2),rgba(200,130,255,0.2));
+border-color:rgba(180,180,255,0.3);
+}
+.menu-version{
+position:fixed;bottom:calc(20px + var(--safe-bottom));
+font-size:0.7rem;color:rgba(200,220,255,0.25);letter-spacing:2px;
+}
+
+/* ===== HUD ===== */
+#hud{
+position:fixed;top:var(--safe-top);left:0;width:100%;
+padding:12px 16px;display:flex;justify-content:space-between;
+align-items:flex-start;z-index:20;pointer-events:none;
+opacity:0;transition:opacity 0.5s;
+}
+#hud.visible{opacity:1}
+#hud>*{pointer-events:auto}
+.hud-stats{display:flex;gap:8px;flex-wrap:wrap}
+.stat-pill{
+display:flex;align-items:center;gap:6px;
+padding:7px 12px;border-radius:25px;font-size:0.8rem;font-weight:600;
+}
+.stat-icon{font-size:0.95rem}
+.hud-right{display:flex;gap:6px}
+.nav-btn{
+width:40px;height:40px;border-radius:12px;
+display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+}
+.level-bar{
+width:50px;height:3px;background:rgba(255,255,255,0.08);
+border-radius:2px;margin-top:6px;overflow:hidden;
+}
+.level-fill{
+height:100%;border-radius:2px;
+background:linear-gradient(90deg,rgba(130,200,255,0.8),rgba(200,130,255,0.8));
+transition:width 0.8s;
+}
+
+/* ===== BOTTOM BAR ===== */
+.bottom-bar{
+position:fixed;bottom:calc(12px + var(--safe-bottom));
+left:50%;transform:translateX(-50%);
+display:flex;gap:6px;padding:6px 12px;border-radius:20px;z-index:20;
+opacity:0;transition:opacity 0.5s;
+}
+.bottom-bar.visible{opacity:1}
+.bottom-btn{
+width:48px;height:48px;border-radius:14px;
+display:flex;flex-direction:column;align-items:center;
+justify-content:center;font-size:1.2rem;gap:1px;
+}
+.bottom-btn .btn-label{font-size:0.5rem;font-weight:600;color:var(--text-secondary)}
+
+/* ===== NOTIFICATIONS ===== */
+.notification{
+position:fixed;top:calc(70px + var(--safe-top));left:50%;
+transform:translateX(-50%) translateY(-20px);
+padding:12px 24px;border-radius:16px;font-size:0.85rem;font-weight:600;
+z-index:200;opacity:0;transition:all 0.5s cubic-bezier(0.4,0,0.2,1);
+text-align:center;max-width:88vw;pointer-events:none;
+}
+.notification.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.notification.mystery{
+background:linear-gradient(135deg,rgba(200,100,255,0.25),rgba(100,150,255,0.25));
+border:1px solid rgba(200,150,255,0.4);box-shadow:0 0 30px rgba(200,130,255,0.3);
+}
+.notification.discovery{
+background:linear-gradient(135deg,rgba(100,255,200,0.25),rgba(100,200,255,0.25));
+border:1px solid rgba(100,255,200,0.4);box-shadow:0 0 30px rgba(100,255,200,0.3);
+}
+.notification.reward{
+background:linear-gradient(135deg,rgba(255,215,100,0.25),rgba(255,180,100,0.25));
+border:1px solid rgba(255,215,100,0.4);box-shadow:0 0 30px rgba(255,215,100,0.3);
+}
+.notification.event{
+background:linear-gradient(135deg,rgba(255,100,100,0.25),rgba(255,100,200,0.25));
+border:1px solid rgba(255,100,150,0.4);box-shadow:0 0 30px rgba(255,100,150,0.3);
+font-size:0.95rem;letter-spacing:2px;
+}
+
+/* ===== MODALS ===== */
+.modal-overlay{
+position:fixed;top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+z-index:50;display:flex;align-items:center;justify-content:center;
+opacity:0;pointer-events:none;transition:opacity 0.4s;
+}
+.modal-overlay.visible{opacity:1;pointer-events:auto}
+.modal-panel{
+width:min(92vw,550px);max-height:80vh;padding:24px;
+overflow-y:auto;-webkit-overflow-scrolling:touch;
+transform:scale(0.9) translateY(20px);
+transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.modal-overlay.visible .modal-panel{transform:scale(1) translateY(0)}
+.modal-header{
+display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;
+}
+.modal-title{
+font-family:'Comfortaa',sans-serif;font-size:1.3rem;
+font-weight:700;letter-spacing:2px;
+}
+.close-btn{
+width:36px;height:36px;border-radius:12px;font-size:1.1rem;
+display:flex;align-items:center;justify-content:center;
+}
+
+/* ===== CREATURES ===== */
+.creature-grid{
+display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;
+}
+.creature-card{
+padding:16px 12px;border-radius:16px;text-align:center;
+cursor:pointer;transition:all 0.3s;
+}
+.creature-card:active{transform:scale(0.95)}
+.creature-card.undiscovered{opacity:0.35}
+.creature-emoji{
+font-size:2.2rem;margin-bottom:6px;display:block;
+filter:drop-shadow(0 0 8px rgba(255,255,255,0.3));
+}
+.creature-card.undiscovered .creature-emoji{filter:brightness(0) invert(0.3)}
+.creature-name{font-weight:700;font-size:0.8rem;margin-bottom:3px}
+.creature-rarity{font-size:0.65rem;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.rarity-common{color:rgba(150,220,150,0.9)}
+.rarity-uncommon{color:rgba(100,180,255,0.9)}
+.rarity-rare{color:rgba(200,130,255,0.9)}
+.rarity-legendary{color:rgba(255,215,100,0.9)}
+
+/* ===== INVENTORY ===== */
+.inventory-grid{
+display:grid;grid-template-columns:repeat(auto-fill,minmax(75px,1fr));gap:8px;
+}
+.inv-item{
+aspect-ratio:1;border-radius:14px;
+display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.inv-emoji{font-size:1.6rem}
+.inv-count{font-size:0.65rem;font-weight:700;color:var(--text-secondary);margin-top:2px}
+.inv-name{font-size:0.5rem;color:var(--text-secondary);margin-top:1px;text-align:center}
+
+/* ===== BUILD ===== */
+.build-grid{
+display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;
+}
+.build-item{
+padding:14px 8px;border-radius:14px;text-align:center;
+cursor:pointer;transition:all 0.3s;
+}
+.build-item:active:not(.locked){transform:scale(0.95)}
+.build-item.locked{opacity:0.35;cursor:default}
+.build-item.cant-afford{opacity:0.5}
+.build-emoji{font-size:1.8rem;display:block;margin-bottom:5px}
+.build-name{font-size:0.75rem;font-weight:700;margin-bottom:3px}
+.build-cost{font-size:0.65rem;color:var(--text-secondary)}
+
+/* ===== TAB BUTTONS ===== */
+.tab-row{display:flex;gap:5px;margin-bottom:14px;overflow-x:auto}
+.tab-btn{padding:7px 14px;border-radius:10px;font-size:0.75rem;font-weight:600;white-space:nowrap}
+.tab-btn.active{background:rgba(130,200,255,0.2);border-color:rgba(130,200,255,0.4)}
+
+/* ===== QUESTS ===== */
+.quest-list{display:flex;flex-direction:column;gap:8px}
+.quest-item{
+padding:14px 16px;border-radius:14px;display:flex;align-items:center;gap:12px;
+}
+.quest-item.completed{opacity:0.45}
+.quest-icon{font-size:1.3rem;min-width:30px;text-align:center}
+.quest-info{flex:1}
+.quest-name{font-weight:700;font-size:0.85rem}
+.quest-desc{font-size:0.7rem;color:var(--text-secondary);margin-top:2px}
+.quest-reward{font-size:0.6rem;color:rgba(255,215,100,0.8);margin-top:2px}
+.quest-progress{width:50px;height:5px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden}
+.quest-fill{
+height:100%;border-radius:3px;
+background:linear-gradient(90deg,rgba(130,200,255,0.8),rgba(200,130,255,0.8));
+transition:width 0.5s;
+}
+.quest-claim{
+padding:6px 14px;border-radius:10px;font-size:0.7rem;
+background:linear-gradient(135deg,rgba(255,215,100,0.25),rgba(255,180,100,0.25));
+border-color:rgba(255,215,100,0.5);
+animation:claimPulse 1.5s ease-in-out infinite;
+}
+@keyframes claimPulse{0%,100%{box-shadow:0 0 5px rgba(255,215,100,0.2)}50%{box-shadow:0 0 15px rgba(255,215,100,0.4)}}
+
+/* ===== WORLDS ===== */
+.world-grid{
+display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;
+}
+.world-card{padding:18px 12px;border-radius:16px;text-align:center;transition:all 0.3s}
+.world-card.locked{opacity:0.3}
+.world-card.active{border-color:rgba(130,200,255,0.5);box-shadow:0 0 20px rgba(130,200,255,0.2)}
+.world-emoji{font-size:2rem;display:block;margin-bottom:6px}
+.world-name{font-weight:700;font-size:0.75rem}
+.world-status{font-size:0.6rem;color:var(--text-secondary);margin-top:3px}
+
+/* ===== PUZZLE ===== */
+.puzzle-overlay{
+position:fixed;top:0;left:0;width:100%;height:100%;z-index:60;
+display:flex;align-items:center;justify-content:center;flex-direction:column;
+background:rgba(0,0,0,0.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+opacity:0;pointer-events:none;transition:opacity 0.5s;
+}
+.puzzle-overlay.visible{opacity:1;pointer-events:auto}
+.puzzle-title{
+font-family:'Comfortaa',sans-serif;font-size:1.2rem;
+letter-spacing:2px;margin-bottom:6px;
+}
+.puzzle-hint{font-size:0.8rem;color:var(--text-secondary);margin-bottom:20px}
+.puzzle-grid{
+display:grid;grid-template-columns:repeat(3,65px);gap:7px;
+justify-content:center;margin-bottom:18px;
+}
+.puzzle-cell{
+width:65px;height:65px;border-radius:14px;
+display:flex;align-items:center;justify-content:center;font-size:1.6rem;
+transition:all 0.3s;
+}
+.puzzle-cell:active{transform:scale(0.9)}
+.puzzle-cell.selected{
+border-color:rgba(130,200,255,0.6);box-shadow:0 0 20px rgba(130,200,255,0.3);
+background:rgba(130,200,255,0.15);
+}
+.puzzle-cell.correct{
+border-color:rgba(100,255,150,0.6);box-shadow:0 0 20px rgba(100,255,150,0.3);
+background:rgba(100,255,150,0.15);animation:correctPulse 0.5s;
+}
+.puzzle-cell.wrong{
+border-color:rgba(255,100,100,0.6);box-shadow:0 0 20px rgba(255,100,100,0.3);
+background:rgba(255,100,100,0.15);animation:wrongShake 0.5s;
+}
+@keyframes correctPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+@keyframes wrongShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* ===== PORTAL ===== */
+.portal-overlay{
+position:fixed;top:0;left:0;width:100%;height:100%;z-index:90;
+display:flex;align-items:center;justify-content:center;flex-direction:column;
+background:rgba(0,0,10,0.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+opacity:0;pointer-events:none;transition:opacity 1s;
+}
+.portal-overlay.visible{opacity:1;pointer-events:auto}
+.portal-ring{
+width:160px;height:160px;border:3px solid rgba(200,130,255,0.6);
+border-radius:50%;animation:portalSpin 3s linear infinite;
+box-shadow:0 0 40px rgba(200,130,255,0.4),inset 0 0 40px rgba(200,130,255,0.2);
+position:relative;
+}
+.portal-ring::before{
+content:'';position:absolute;top:10px;left:10px;right:10px;bottom:10px;
+border:2px solid rgba(130,200,255,0.5);border-radius:50%;
+animation:portalSpin 2s linear infinite reverse;
+}
+.portal-ring::after{
+content:'';position:absolute;top:25px;left:25px;right:25px;bottom:25px;
+border:1px solid rgba(255,200,255,0.4);border-radius:50%;
+animation:portalSpin 4s linear infinite;
+}
+@keyframes portalSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.portal-text{
+font-family:'Comfortaa',sans-serif;font-size:1rem;
+color:rgba(200,180,255,0.9);margin-top:24px;letter-spacing:3px;
+text-shadow:0 0 20px rgba(200,130,255,0.5);
+}
+.portal-btn{margin-top:16px;padding:12px 32px;font-size:0.9rem;letter-spacing:2px}
+.portal-enter{
+background:linear-gradient(135deg,rgba(200,100,255,0.3),rgba(100,150,255,0.3));
+border-color:rgba(200,150,255,0.5);
+}
+.portal-skip{
+margin-top:8px;padding:8px 20px;font-size:0.75rem;
+background:rgba(255,100,100,0.1);border-color:rgba(255,100,100,0.25);
+}
+
+/* ===== DISCOVERY POPUP ===== */
+.discovery-popup{
+position:fixed;top:50%;left:50%;
+transform:translate(-50%,-50%) scale(0.5);
+z-index:100;padding:35px 45px;text-align:center;
+opacity:0;pointer-events:none;
+transition:all 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+.discovery-popup.visible{
+opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto;
+}
+.discovery-emoji{
+font-size:3.5rem;display:block;margin-bottom:12px;
+animation:discoveryBounce 1s ease-in-out infinite;
+filter:drop-shadow(0 0 15px rgba(255,255,255,0.4));
+}
+@keyframes discoveryBounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.05)}}
+.discovery-title{
+font-family:'Comfortaa',sans-serif;font-size:1.3rem;
+font-weight:700;margin-bottom:5px;letter-spacing:2px;
+}
+.discovery-rarity{font-size:0.7rem;letter-spacing:1px;margin-bottom:4px}
+.discovery-subtitle{font-size:0.8rem;color:var(--text-secondary);margin-bottom:16px}
+.discovery-rewards{
+font-size:0.75rem;color:rgba(255,215,100,0.9);margin-bottom:14px;
+}
+.discovery-close{padding:10px 28px;font-size:0.85rem}
+
+/* ===== SKY CRACKS ===== */
+.sky-crack{
+position:fixed;top:0;left:0;width:100%;height:100%;z-index:80;
+pointer-events:none;opacity:0;transition:opacity 2s;
+}
+.sky-crack.visible{opacity:1}
+.crack-line{
+position:absolute;
+background:linear-gradient(180deg,rgba(255,255,255,0.8),rgba(200,150,255,0.5),transparent);
+width:2px;animation:crackGlow 1.5s ease-in-out infinite alternate;
+}
+@keyframes crackGlow{0%{box-shadow:0 0 5px rgba(255,255,255,0.3);opacity:0.6}100%{box-shadow:0 0 15px rgba(200,150,255,0.6);opacity:1}}
+
+/* ===== EVENT TIMER ===== */
+.event-timer{
+position:fixed;top:calc(60px + var(--safe-top));right:16px;
+padding:6px 14px;border-radius:12px;font-size:0.7rem;font-weight:600;
+color:rgba(255,180,200,0.9);z-index:25;opacity:0;transition:opacity 0.5s;
+}
+.event-timer.visible{opacity:1}
+
+/* ===== INTERACT HINT ===== */
+.interact-hint{
+position:fixed;bottom:calc(80px + var(--safe-bottom));left:50%;
+transform:translateX(-50%);padding:7px 18px;border-radius:12px;
+font-size:0.75rem;font-weight:600;color:var(--text-secondary);z-index:15;
+opacity:0;transition:opacity 0.4s;white-space:nowrap;
+}
+.interact-hint.visible{opacity:1}
+
+/* ===== FLOAT TEXT ===== */
+.float-collect{
+position:fixed;font-size:1rem;font-weight:700;
+color:rgba(255,215,100,0.9);z-index:30;pointer-events:none;
+animation:floatUp 1.2s ease-out forwards;
+text-shadow:0 0 10px rgba(255,215,100,0.5);
+}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-50px) scale(0.5)}}
+
+/* ===== SETTINGS ===== */
+.settings-row{
+display:flex;justify-content:space-between;align-items:center;
+padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.settings-label{font-weight:600;font-size:0.85rem}
+.toggle{
+width:46px;height:26px;border-radius:13px;
+background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);
+cursor:pointer;position:relative;transition:all 0.3s;
+}
+.toggle.on{background:rgba(130,200,255,0.3);border-color:rgba(130,200,255,0.5)}
+.toggle-knob{
+width:20px;height:20px;border-radius:10px;background:white;
+position:absolute;top:2px;left:2px;transition:all 0.3s;
+box-shadow:0 2px 6px rgba(0,0,0,0.3);
+}
+.toggle.on .toggle-knob{left:22px}
+input[type="range"]{
+-webkit-appearance:none;width:90px;height:3px;border-radius:2px;
+background:rgba(255,255,255,0.15);outline:none;
+}
+input[type="range"]::-webkit-slider-thumb{
+-webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+background:white;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* ===== MAP VIEW ===== */
+.map-overlay{
+position:fixed;top:0;left:0;width:100%;height:100%;z-index:55;
+background:rgba(0,0,10,0.8);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);
+opacity:0;pointer-events:none;transition:opacity 0.5s;
+display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.map-overlay.visible{opacity:1;pointer-events:auto}
+.map-title{
+font-family:'Comfortaa',sans-serif;font-size:1.2rem;
+margin-bottom:20px;letter-spacing:3px;
+}
+.map-island{
+width:min(80vw,350px);height:min(80vw,350px);position:relative;
+border:1px solid rgba(255,255,255,0.1);border-radius:50%;
+background:rgba(255,255,255,0.02);
+}
+.map-point{
+position:absolute;width:14px;height:14px;border-radius:50%;
+transform:translate(-50%,-50%);cursor:pointer;
+transition:all 0.3s;
+}
+.map-point:active{transform:translate(-50%,-50%) scale(1.3)}
+.map-point.visited{background:rgba(130,200,255,0.6);box-shadow:0 0 10px rgba(130,200,255,0.4)}
+.map-point.current{background:rgba(255,215,100,0.8);box-shadow:0 0 12px rgba(255,215,100,0.5);animation:mapPulse 1.5s infinite}
+.map-point.unknown{background:rgba(200,200,200,0.2);border:1px dashed rgba(255,255,255,0.2)}
+@keyframes mapPulse{0%,100%{box-shadow:0 0 8px rgba(255,215,100,0.4)}50%{box-shadow:0 0 18px rgba(255,215,100,0.7)}}
+.map-label{
+position:absolute;transform:translateX(-50%);
+font-size:0.55rem;color:var(--text-secondary);white-space:nowrap;margin-top:2px;
+}
+
+/* ===== WEATHER ===== */
+.weather-particle{
+position:fixed;pointer-events:none;z-index:6;
+width:2px;background:rgba(200,220,255,0.3);
+animation:rainfall linear infinite;
+}
+@keyframes rainfall{
+0%{transform:translateY(-10px);opacity:0}
+10%{opacity:1}
+90%{opacity:1}
+100%{transform:translateY(100vh);opacity:0}
+}
+
+/* ===== ACHIEVEMENT BADGE ===== */
+.achievement-popup{
+position:fixed;top:calc(120px + var(--safe-top));right:16px;
+padding:14px 18px;border-radius:16px;z-index:95;
+transform:translateX(120%);transition:transform 0.6s cubic-bezier(0.4,0,0.2,1);
+display:flex;align-items:center;gap:10px;
+background:linear-gradient(135deg,rgba(255,215,100,0.2),rgba(255,180,100,0.2));
+border:1px solid rgba(255,215,100,0.4);max-width:250px;
+}
+.achievement-popup.visible{transform:translateX(0)}
+.achievement-icon{font-size:1.5rem}
+.achievement-text{font-size:0.7rem;font-weight:600;line-height:1.3}
+.achievement-label{font-size:0.55rem;color:rgba(255,215,100,0.8);text-transform:uppercase;letter-spacing:1px}
+
+/* ===== DAY/NIGHT INDICATOR ===== */
+.time-indicator{
+position:fixed;top:calc(12px + var(--safe-top));left:50%;transform:translateX(-50%);
+font-size:0.6rem;color:rgba(200,220,255,0.4);letter-spacing:1px;z-index:21;
+opacity:0;transition:opacity 0.5s;
+}
+.time-indicator.visible{opacity:1}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:2px}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:400px){
+  .creature-grid{grid-template-columns:repeat(2,1fr)}
+  .build-grid{grid-template-columns:repeat(2,1fr)}
+  .puzzle-cell{width:55px;height:55px;font-size:1.3rem}
+  .puzzle-grid{grid-template-columns:repeat(3,55px)}
+  .stat-pill{padding:5px 10px;font-size:0.7rem}
+  .bottom-btn{width:42px;height:42px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+<canvas id="gameCanvas"></canvas>
+
+<div class="sky-crack" id="skyCrack"></div>
+<div class="time-indicator" id="timeIndicator">🌙 Night</div>
+
+<!-- MAIN MENU -->
+<div id="mainMenu">
+  <div class="menu-title">GLASSVERSE</div>
+  <div class="menu-subtitle">A Universe of Glass & Light</div>
+  <div class="menu-buttons">
+    <button class="glass-btn menu-btn primary" onclick="G.startGame()">✦ Enter World</button>
+    <button class="glass-btn menu-btn" onclick="G.openModal('worlds')">🌍 Worlds</button>
+    <button class="glass-btn menu-btn" onclick="G.openModal('settings')">⚙ Settings</button>
+  </div>
+  <div class="menu-version">v1.0.0 — Dream Garden</div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-stats">
+    <div class="stat-pill glass">
+      <span class="stat-icon">💎</span>
+      <span id="crystalCount">0</span>
+    </div>
+    <div class="stat-pill glass">
+      <span class="stat-icon">⭐</span>
+      <span id="starCount">0</span>
+    </div>
+    <div class="stat-pill glass">
+      <span class="stat-icon">✨</span>
+      <span id="xpDisplay">Lv 1</span>
+      <div class="level-bar"><div class="level-fill" id="xpBar" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="hud-right">
+    <button class="glass-btn nav-btn" onclick="G.openMap()" title="Map">🗺</button>
+    <button class="glass-btn nav-btn" onclick="G.openModal('settings')" title="Settings">⚙</button>
+  </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar glass" id="bottomBar">
+  <button class="glass-btn bottom-btn" onclick="G.openModal('creatures')">🐾<span class="btn-label">Pets</span></button>
+  <button class="glass-btn bottom-btn" onclick="G.openModal('inventory')">🎒<span class="btn-label">Items</span></button>
+  <button class="glass-btn bottom-btn" onclick="G.openModal('build')">🏗<span class="btn-label">Build</span></button>
+  <button class="glass-btn bottom-btn" onclick="G.openModal('quests')">📜<span class="btn-label">Quests</span></button>
+  <button class="glass-btn bottom-btn" onclick="G.backToMenu()">🏠<span class="btn-label">Menu</span></button>
+</div>
+
+<div class="interact-hint glass" id="interactHint"></div>
+<div class="notification" id="notification"></div>
+<div class="event-timer glass" id="eventTimer"></div>
+
+<!-- PORTAL -->
+<div class="portal-overlay" id="portalOverlay">
+  <div class="portal-ring"></div>
+  <div class="portal-text">A MYSTERIOUS PORTAL AWAITS</div>
+  <button class="glass-btn portal-btn portal-enter" onclick="G.enterPortal()">Enter Portal</button>
+  <button class="glass-btn portal-btn portal-skip" onclick="G.closePortal()">Not Now</button>
+</div>
+
+<!-- DISCOVERY -->
+<div class="discovery-popup glass" id="discoveryPopup">
+  <span class="discovery-emoji" id="discoveryEmoji">🐱</span>
+  <div class="discovery-title" id="discoveryTitle">LUMICAT</div>
+  <div class="discovery-rarity" id="discoveryRarity"></div>
+  <div class="discovery-subtitle" id="discoverySubtitle">A glowing feline</div>
+  <div class="discovery-rewards" id="discoveryRewards"></div>
+  <button class="glass-btn discovery-close" onclick="G.closeDiscovery()">Amazing!</button>
+</div>
+
+<!-- PUZZLE -->
+<div class="puzzle-overlay" id="puzzleOverlay">
+  <div class="puzzle-title">Crystal Sequence</div>
+  <div class="puzzle-hint" id="puzzleHint">Watch the pattern...</div>
+  <div class="puzzle-grid" id="puzzleGrid"></div>
+  <button class="glass-btn" style="padding:10px 22px;font-size:0.8rem" onclick="G.closePuzzle()">Close</button>
+</div>
+
+<!-- MAP -->
+<div class="map-overlay" id="mapOverlay">
+  <div class="map-title">Island Map</div>
+  <div class="map-island" id="mapIsland"></div>
+  <button class="glass-btn" style="margin-top:20px;padding:10px 28px;font-size:0.85rem" onclick="G.closeMap()">Close</button>
+</div>
+
+<!-- ACHIEVEMENT -->
+<div class="achievement-popup glass" id="achievementPopup">
+  <span class="achievement-icon" id="achIcon">🏆</span>
+  <div>
+    <div class="achievement-label">Achievement Unlocked</div>
+    <div class="achievement-text" id="achText">First Steps</div>
+  </div>
+</div>
+
+<!-- MODAL: CREATURES -->
+<div class="modal-overlay" id="modal-creatures" onclick="G.closeModalBg(event,'creatures')">
+  <div class="modal-panel glass">
+    <div class="modal-header">
+      <div class="modal-title">🐾 Creatures</div>
+      <button class="glass-btn close-btn" onclick="G.closeModal('creatures')">✕</button>
+    </div>
+    <div id="creatureStats" style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:12px"></div>
+    <div class="creature-grid" id="creatureGrid"></div>
+  </div>
+</div>
+
+<!-- MODAL: INVENTORY -->
+<div class="modal-overlay" id="modal-inventory" onclick="G.closeModalBg(event,'inventory')">
+  <div class="modal-panel glass">
+    <div class="modal-header">
+      <div class="modal-title">🎒 Inventory</div>
+      <button class="glass-btn close-btn" onclick="G.closeModal('inventory')">✕</button>
+    </div>
+    <div class="inventory-grid" id="inventoryGrid"></div>
+  </div>
+</div>
+
+<!-- MODAL: BUILD -->
+<div class="modal-overlay" id="modal-build" onclick="G.closeModalBg(event,'build')">
+  <div class="modal-panel glass">
+    <div class="modal-header">
+      <div class="modal-title">🏗 Build</div>
+      <button class="glass-btn close-btn" onclick="G.closeModal('build')">✕</button>
+    </div>
+    <div class="tab-row" id="buildTabs"></div>
+    <div class="build-grid" id="buildGrid"></div>
+  </div>
+</div>
+
+<!-- MODAL: QUESTS -->
+<div class="modal-overlay" id="modal-quests" onclick="G.closeModalBg(event,'quests')">
+  <div class="modal-panel glass">
+    <div class="modal-header">
+      <div class="modal-title">📜 Quests</div>
+      <button class="glass-btn close-btn" onclick="G.closeModal('quests')">✕</button>
+    </div>
+    <div class="quest-list" id="questList"></div>
+  </div>
+</div>
+
+<!-- MODAL: SETTINGS -->
+<div class="modal-overlay" id="modal-settings" onclick="G.closeModalBg(event,'settings')">
+  <div class="modal-panel glass">
+    <div class="modal-header">
+      <div class="modal-title">⚙ Settings</div>
+      <button class="glass-btn close-btn" onclick="G.closeModal('settings')">✕</button>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">🔊 Music</span>
+      <input type="range" min="0" max="100" value="60" id="musicVol" oninput="G.setMusicVol(this.value)">
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">🔔 Sound Effects</span>
+      <div class="toggle on" id="sfxToggle" onclick="G.toggleSfx()"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">📳 Haptic Feedback</span>
+      <div class="toggle on" id="hapticToggle" onclick="G.toggleHaptic()"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">✨ Particles</span>
+      <div class="toggle on" id="particleToggle" onclick="G.toggleParticles()"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">🌤 Day/Night Cycle</span>
+      <div class="toggle on" id="dayNightToggle" onclick="G.toggleDayNight()"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="settings-row" style="border:none">
+      <span class="settings-label">🗑 Reset Progress</span>
+      <button class="glass-btn" style="padding:7px 14px;font-size:0.7rem;color:rgba(255,130,130,0.9)" onclick="G.resetProgress()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: WORLDS -->
+<div class="modal-overlay" id="modal-worlds" onclick="G.closeModalBg(event,'worlds')">
+  <div class="modal-panel glass">
+    <div class="modal-header">
+      <div class="modal-title">🌍 Worlds</div>
+      <button class="glass-btn close-btn" onclick="G.closeModal('worlds')">✕</button>
+    </div>
+    <div class="world-grid" id="worldGrid"></div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// GLASSVERSE — Complete Game Engine v1.0
+// ================================================================
+
+const G = (() => {
+'use strict';
+
+// ===== DATA =====
+const CREATURES = [
+  {id:'lumicat',name:'Lumicat',emoji:'🐱',rarity:'common',desc:'A glowing feline made of pure starlight',color:'#82c8ff',xp:25,stars:3},
+  {id:'bubblefrog',name:'Bubblefrog',emoji:'🐸',rarity:'common',desc:'A tiny frog that blows magical glass bubbles',color:'#55ddaa',xp:25,stars:3},
+  {id:'foxel',name:'Foxel',emoji:'🦊',rarity:'uncommon',desc:'A playful crystal fox with prismatic fur',color:'#ffaa55',xp:40,stars:5},
+  {id:'dreamfly',name:'Dreamfly',emoji:'🦋',rarity:'uncommon',desc:'A luminescent butterfly from the dream realm',color:'#dd88ff',xp:40,stars:5},
+  {id:'glacera',name:'Glacera',emoji:'🐉',rarity:'rare',desc:'An ancient ice dragon encased in living glass',color:'#88ddff',xp:80,stars:10},
+  {id:'voidling',name:'Voidling',emoji:'👾',rarity:'legendary',desc:'A mysterious being from the space between worlds',color:'#cc88ff',xp:150,stars:20}
+];
+
+const ITEMS = {
+  crystal_shard:{name:'Crystal Shard',emoji:'💎'},
+  star_dust:{name:'Star Dust',emoji:'✨'},
+  glass_petal:{name:'Glass Petal',emoji:'🌸'},
+  moon_stone:{name:'Moon Stone',emoji:'🌙'},
+  dream_essence:{name:'Dream Essence',emoji:'💜'},
+  void_fragment:{name:'Void Fragment',emoji:'🔮'},
+  rainbow_dew:{name:'Rainbow Dew',emoji:'🌈'},
+  ancient_rune:{name:'Ancient Rune',emoji:'📜'}
+};
+
+const BUILDINGS = {
+  structures:[
+    {id:'glass_house',name:'Glass House',emoji:'🏠',cost:15},
+    {id:'crystal_tower',name:'Crystal Tower',emoji:'🗼',cost:30},
+    {id:'observatory',name:'Observatory',emoji:'🔭',cost:50,unlock:3},
+    {id:'portal_arch',name:'Portal Arch',emoji:'🌀',cost:80,unlock:5},
+    {id:'library',name:'Glass Library',emoji:'📚',cost:60,unlock:4}
+  ],
+  nature:[
+    {id:'crystal_tree',name:'Crystal Tree',emoji:'🌳',cost:10},
+    {id:'glow_flower',name:'Glow Flowers',emoji:'🌺',cost:8},
+    {id:'moon_pond',name:'Moon Pond',emoji:'💧',cost:20},
+    {id:'star_vine',name:'Star Vine',emoji:'🌿',cost:12},
+    {id:'cloud_bush',name:'Cloud Bush',emoji:'☁️',cost:14}
+  ],
+  decor:[
+    {id:'lantern',name:'Glass Lantern',emoji:'🏮',cost:5},
+    {id:'fountain',name:'Light Fountain',emoji:'⛲',cost:25},
+    {id:'bench',name:'Cloud Bench',emoji:'🪑',cost:8},
+    {id:'statue',name:'Crystal Statue',emoji:'🗿',cost:40,unlock:4},
+    {id:'windchime',name:'Wind Chime',emoji:'🎐',cost:6}
+  ]
+};
+
+const QUESTS = [
+  {id:'q_collect5',name:'First Harvest',desc:'Collect 5 crystals',icon:'💎',target:5,type:'collect',reward:{stars:2,xp:20}},
+  {id:'q_collect20',name:'Crystal Hunter',desc:'Collect 20 crystals',icon:'💎',target:20,type:'collect',reward:{stars:5,xp:50}},
+  {id:'q_creature1',name:'First Discovery',desc:'Discover your first creature',icon:'🐾',target:1,type:'creature',reward:{stars:3,xp:30}},
+  {id:'q_creature3',name:'Creature Collector',desc:'Discover 3 creatures',icon:'🐾',target:3,type:'creature',reward:{stars:8,xp:80}},
+  {id:'q_puzzle',name:'Puzzle Master',desc:'Solve the crystal sequence',icon:'🧩',target:1,type:'puzzle',reward:{stars:5,xp:50}},
+  {id:'q_build1',name:'First Builder',desc:'Build your first structure',icon:'🏗',target:1,type:'build',reward:{stars:3,xp:25}},
+  {id:'q_build5',name:'Island Architect',desc:'Build 5 structures',icon:'🏗',target:5,type:'build',reward:{stars:10,xp:100}},
+  {id:'q_secret',name:'Secret Seeker',desc:'Find the hidden secret area',icon:'🔮',target:1,type:'secret',reward:{stars:8,xp:60}},
+  {id:'q_portal',name:'Portal Traveler',desc:'Enter the mysterious portal',icon:'🌀',target:1,type:'portal',reward:{stars:10,xp:100}},
+  {id:'q_level3',name:'Growing Strong',desc:'Reach Level 3',icon:'⬆️',target:3,type:'level',reward:{stars:5,xp:0}},
+  {id:'q_gather10',name:'Resource Gatherer',desc:'Gather 10 resources',icon:'🌸',target:10,type:'gather',reward:{stars:4,xp:40}}
+];
+
+const WORLDS = [
+  {id:'dream_garden',name:'Dream Garden',emoji:'🌸',status:'Current',locked:false},
+  {id:'ocean_glass',name:'Ocean Glass',emoji:'🌊',status:'Lv 5',locked:true,req:5},
+  {id:'crystal_volcano',name:'Crystal Volcano',emoji:'🌋',status:'Lv 10',locked:true,req:10},
+  {id:'moon_city',name:'Moon City',emoji:'🌙',status:'Lv 15',locked:true,req:15},
+  {id:'cloud_kingdom',name:'Cloud Kingdom',emoji:'☁️',status:'Lv 20',locked:true,req:20},
+  {id:'cosmic_world',name:'Cosmic World',emoji:'🌌',status:'Lv 25',locked:true,req:25},
+  {id:'mystery_dim',name:'Mystery Dimension',emoji:'❓',status:'???',locked:true,req:99}
+];
+
+const ACHIEVEMENTS = [
+  {id:'ach_start',name:'First Steps',desc:'Enter the world',check:s=>s.totalCollected>0},
+  {id:'ach_10crystals',name:'Shiny!',desc:'Collect 10 crystals',check:s=>s.totalCollected>=10},
+  {id:'ach_creature',name:'Friend Finder',desc:'Discover a creature',check:s=>Object.keys(s.creatures).length>=1},
+  {id:'ach_puzzle',name:'Brain Power',desc:'Solve a puzzle',check:s=>s.puzzleSolved},
+  {id:'ach_portal',name:'Dimension Walker',desc:'Enter a portal',check:s=>s.portalEntered},
+  {id:'ach_builder',name:'Master Builder',desc:'Build 5 structures',check:s=>s.buildCount>=5},
+  {id:'ach_lv5',name:'Rising Star',desc:'Reach Level 5',check:s=>s.level>=5}
+];
+
+// ===== STATE =====
+let state = {
+  crystals:0, stars:0, xp:0, level:1, xpToNext:50,
+  creatures:{}, inventory:{},
+  buildings:[], questsClaimed:{},
+  puzzleSolved:false, portalOpened:false, portalEntered:false,
+  secretFound:false, eventActive:false, eventTimer:0,
+  particlesOn:true, sfxOn:true, hapticOn:true, dayNightOn:true,
+  musicVol:0.6,
+  totalCollected:0, totalGathered:0, buildCount:0,
+  achievements:{},
+  hints:{}, timeStarted:Date.now()
+};
+
+// ===== RUNTIME =====
+let bgCanvas, bgCtx, gameCanvas, gameCtx;
+let W=0, H=0, running=false, frame=0;
+let camera={x:0,y:0,tx:0,ty:0,zoom:1};
+let mouse={x:0,y:0};
+let hovered=null;
+let isDrag=false, dragS={x:0,y:0}, camDragS={x:0,y:0};
+let worldObjs=[], islands=[], decorations=[], particles=[], bgStars=[], clouds=[];
+let dayTime=0; // 0-1 cycle
+let notifTimer=null, achTimer=null;
+let puzzleSeq=[], playerSeq=[], puzzlePhase='idle', puzzleShowIdx=0;
+const puzzleSym=['🔷','🔶','💜','💚','❤️','🩵','🧡','💛','🩷'];
+let buildTab='structures';
+
+// ===== AUDIO ENGINE =====
+const Audio = {
+  ctx:null, musicGain:null, sfxGain:null, _mt:null,
+  init(){
+    if(this.ctx)return;
+    this.ctx=new(window.AudioContext||window.webkitAudioContext)();
+    this.musicGain=this.ctx.createGain();
+    this.musicGain.gain.value=0.12*state.musicVol;
+    this.musicGain.connect(this.ctx.destination);
+    this.sfxGain=this.ctx.createGain();
+    this.sfxGain.gain.value=0.25;
+    this.sfxGain.connect(this.ctx.destination);
+  },
+  ensure(){if(!this.ctx)this.init();if(this.ctx.state==='suspended')this.ctx.resume()},
+  note(f,d,t='sine',g=0.25,dest=null){
+    if(!state.sfxOn&&dest!==this.musicGain)return;
+    this.ensure();
+    const o=this.ctx.createOscillator(),gn=this.ctx.createGain();
+    o.type=t;o.frequency.value=f;
+    gn.gain.setValueAtTime(g,this.ctx.currentTime);
+    gn.gain.exponentialRampToValueAtTime(0.001,this.ctx.currentTime+d);
+    o.connect(gn);gn.connect(dest||this.sfxGain);
+    o.start();o.stop(this.ctx.currentTime+d);
+  },
+  collect(){this.note(880,0.12);setTimeout(()=>this.note(1100,0.12),70);setTimeout(()=>this.note(1320,0.18),140)},
+  discover(){[523,659,784,1047].forEach((n,i)=>setTimeout(()=>this.note(n,0.3,'sine',0.2),i*110))},
+  puzzleOk(){this.note(660,0.2);setTimeout(()=>this.note(880,0.25),120)},
+  puzzleFail(){this.note(200,0.3,'sawtooth',0.12)},
+  build(){this.note(440,0.1);setTimeout(()=>this.note(550,0.1),50);setTimeout(()=>this.note(660,0.12),100)},
+  portal(){for(let i=0;i<6;i++)setTimeout(()=>this.note(300+i*80,0.5,'sine',0.1),i*90)},
+  click(){this.note(600,0.06,'sine',0.12)},
+  event(){for(let i=0;i<4;i++)setTimeout(()=>this.note(200+i*50,0.7,'sine',0.08),i*180)},
+  achievement(){[784,988,1175,1568].forEach((n,i)=>setTimeout(()=>this.note(n,0.25,'sine',0.15),i*80))},
+  startMusic(){
+    this.ensure();
+    if(this._mt)return;
+    this._musicLoop();
+  },
+  _musicLoop(){
+    if(!this._mt)this._mt=true;
+    const chords=[[261,329,392],[293,349,440],[329,392,493],[261,349,440],[220,293,349]];
+    const c=chords[Math.floor(Math.random()*chords.length)];
+    c.forEach(f=>{
+      this.note(f,4.5,'sine',0.035,this.musicGain);
+      this.note(f*2,4.5,'sine',0.012,this.musicGain);
+    });
+    this._mTimer=setTimeout(()=>this._musicLoop(),3800);
+  },
+  stopMusic(){clearTimeout(this._mTimer);this._mt=null},
+  setVol(v){state.musicVol=v;if(this.musicGain)this.musicGain.gain.value=0.12*v}
+};
+
+// ===== HAPTIC =====
+function haptic(type='light'){
+  if(!state.hapticOn)return;
+  try{
+    if(window.AndroidBridge){
+      if(type==='light')AndroidBridge.hapticLight();
+      else if(type==='medium')AndroidBridge.hapticMedium();
+      else AndroidBridge.hapticHeavy();
+    }else if(navigator.vibrate){
+      navigator.vibrate(type==='light'?10:type==='medium'?30:60);
+    }
+  }catch(e){}
+}
+
+// ===== WORLD GENERATION =====
+function generateWorld(){
+  worldObjs=[];islands=[];decorations=[];particles=[];bgStars=[];clouds=[];
+
+  // Stars
+  for(let i=0;i<180;i++){
+    bgStars.push({
+      x:Math.random()*4000-2000,y:Math.random()*4000-2000,
+      size:Math.random()*2+0.5,brightness:Math.random(),
+      twinkle:Math.random()*0.02+0.005
+    });
+  }
+
+  // Clouds
+  for(let i=0;i<12;i++){
+    clouds.push({
+      x:Math.random()*3000-1500,y:Math.random()*2000-1000,
+      w:Math.random()*180+80,h:Math.random()*50+20,
+      speed:(Math.random()-0.5)*0.25,opacity:Math.random()*0.12+0.04
+    });
+  }
+
+  // Main island
+  const mainPts=[];
+  for(let i=0;i<24;i++){
+    const a=(i/24)*Math.PI*2;
+    const r=280+Math.sin(a*3)*35+Math.cos(a*5)*18;
+    mainPts.push({x:Math.cos(a)*r,y:Math.sin(a)*r*0.5});
+  }
+  islands.push({pts:mainPts,x:0,y:100,main:true});
+
+  // Small islands
+  for(let i=0;i<5;i++){
+    const a=(i/5)*Math.PI*2+Math.random()*0.4;
+    const d=450+Math.random()*250;
+    const r=50+Math.random()*35;
+    let p=[];
+    for(let j=0;j<10;j++){
+      const a2=(j/10)*Math.PI*2;
+      p.push({x:Math.cos(a2)*(r+Math.sin(a2*3)*8),y:Math.sin(a2)*r*0.4});
+    }
+    islands.push({pts:p,x:Math.cos(a)*d,y:Math.sin(a)*d*0.5+100,
+      floatOff:Math.random()*Math.PI*2,floatSpd:0.004+Math.random()*0.004});
+  }
+
+  // Crystals on main island
+  for(let i=0;i<30;i++){
+    const a=Math.random()*Math.PI*2,d=Math.random()*240;
+    worldObjs.push({
+      type:'crystal',x:Math.cos(a)*d,y:100+Math.sin(a)*d*0.5,
+      size:11+Math.random()*7,
+      color:['#82c8ff','#c882ff','#82ffc8','#ffc882','#ff82c8'][Math.floor(Math.random()*5)],
+      collected:false,bob:Math.random()*Math.PI*2,glow:Math.random()*Math.PI*2
+    });
+  }
+
+  // Crystals on small islands
+  for(let i=1;i<islands.length;i++){
+    const isl=islands[i];
+    for(let j=0;j<4;j++){
+      worldObjs.push({
+        type:'crystal',x:isl.x+(Math.random()-0.5)*50,y:isl.y+(Math.random()-0.5)*18,
+        size:9+Math.random()*5,
+        color:['#82c8ff','#c882ff','#ffc882'][Math.floor(Math.random()*3)],
+        collected:false,bob:Math.random()*Math.PI*2,glow:Math.random()*Math.PI*2
+      });
+    }
+  }
+
+  // Resources
+  const resTypes=['glass_petal','moon_stone','star_dust','dream_essence','rainbow_dew'];
+  for(let i=0;i<10;i++){
+    const a=Math.random()*Math.PI*2,d=60+Math.random()*200;
+    const r=resTypes[Math.floor(Math.random()*resTypes.length)];
+    worldObjs.push({
+      type:'resource',resource:r,
+      x:Math.cos(a)*d,y:100+Math.sin(a)*d*0.5,
+      size:16,emoji:ITEMS[r].emoji,
+      collected:false,bob:Math.random()*Math.PI*2,respawn:0
+    });
+  }
+
+  // Creatures
+  const creatureSpots=[
+    {id:'lumicat',x:140,y:55,hint:'Something is glowing softly here...'},
+    {id:'bubblefrog',x:-170,y:135,hint:'Tiny bubbles float from this spot...'},
+    {id:'foxel',x:-40,y:15,hint:'Crystal footprints lead here...'}
+  ];
+  creatureSpots.forEach((c,i)=>{
+    worldObjs.push({
+      type:'creature_spot',creatureId:c.id,x:c.x,y:c.y,
+      size:24,discovered:false,hint:c.hint,bob:i
+    });
+  });
+
+  // Puzzle
+  worldObjs.push({type:'puzzle',x:210,y:145,size:28,solved:false,hint:'Ancient crystals form a mysterious pattern...'});
+
+  // Secret
+  worldObjs.push({type:'secret',x:-240,y:45,size:20,found:false,hint:'An unknown energy has been detected...'});
+
+  // Portal
+  worldObjs.push({type:'portal',x:0,y:-15,size:32,active:false,hint:'A rift in space-time...'});
+
+  // Trees
+  [{x:-90,y:65},{x:75,y:125},{x:-150,y:115},{x:190,y:85},
+   {x:-25,y:155},{x:115,y:45},{x:-190,y:75},{x:45,y:175},
+   {x:160,y:160},{x:-120,y:30}].forEach(p=>{
+    decorations.push({
+      type:'tree',x:p.x,y:p.y,h:28+Math.random()*22,
+      sway:Math.random()*Math.PI*2,swaySpd:0.008+Math.random()*0.008
+    });
+  });
+
+  // Grass
+  for(let i=0;i<35;i++){
+    const a=Math.random()*Math.PI*2,d=Math.random()*250;
+    decorations.push({
+      type:'grass',x:Math.cos(a)*d,y:100+Math.sin(a)*d*0.5,
+      size:3+Math.random()*3,sway:Math.random()*Math.PI*2
+    });
+  }
+
+  // Particles
+  for(let i=0;i<45;i++){
+    particles.push({
+      x:Math.random()*1200-600,y:Math.random()*800-400,
+      size:Math.random()*2.5+0.8,
+      sx:(Math.random()-0.5)*0.25,sy:-Math.random()*0.18-0.04,
+      opacity:Math.random()*0.4+0.15,
+      color:['#82c8ff','#c882ff','#82ffc8','#ffffff','#ffc882'][Math.floor(Math.random()*5)],
+      life:Math.random()*800
+    });
+  }
+}
+
+// ===== CANVAS SETUP =====
+function initCanvas(){
+  bgCanvas=document.getElementById('bgCanvas');
+  bgCtx=bgCanvas.getContext('2d');
+  gameCanvas=document.getElementById('gameCanvas');
+  gameCtx=gameCanvas.getContext('2d');
+  resize();
+}
+
+function resize(){
+  W=window.innerWidth;H=window.innerHeight;
+  bgCanvas.width=W;bgCanvas.height=H;
+  gameCanvas.width=W;gameCanvas.height=H;
+}
+window.addEventListener('resize',resize);
+
+function w2s(wx,wy){
+  return{x:(wx-camera.x)*camera.zoom+W/2,y:(wy-camera.y)*camera.zoom+H/2};
+}
+function s2w(sx,sy){
+  return{x:(sx-W/2)/camera.zoom+camera.x,y:(sy-H/2)/camera.zoom+camera.y};
+}
+
+// ===== RENDERING =====
+function renderBG(t){
+  const c=bgCtx;
+  
+  // Sky gradient with day/night
+  let nightMix=1;
+  if(state.dayNightOn){
+    dayTime=(t*0.00002)%1;
+    nightMix=Math.sin(dayTime*Math.PI*2)*0.3+0.7;// mostly night-ish, gentle cycle
+  }
+  
+  const grad=c.createLinearGradient(0,0,0,H);
+  if(state.eventActive){
+    grad.addColorStop(0,'#0a0515');grad.addColorStop(0.4,'#15082a');grad.addColorStop(1,'#1a0a2e');
+  }else{
+    const r=Math.floor(10+nightMix*5),g2=Math.floor(10+nightMix*8),b=Math.floor(30+nightMix*16);
+    grad.addColorStop(0,`rgb(${r},${g2},${b})`);
+    grad.addColorStop(0.5,`rgb(${r+5},${g2+6},${b+10})`);
+    grad.addColorStop(1,`rgb(${r},${g2+8},${b-2})`);
+  }
+  c.fillStyle=grad;c.fillRect(0,0,W,H);
+  
+  // Stars
+  bgStars.forEach(s=>{
+    const sx=((s.x-camera.x*0.08)%W+W)%W;
+    const sy=((s.y-camera.y*0.08)%H+H)%H;
+    const tw=Math.sin(t*s.twinkle+s.brightness*10)*0.5+0.5;
+    c.beginPath();c.arc(sx,sy,s.size*tw,0,Math.PI*2);
+    c.fillStyle=`rgba(200,220,255,${s.brightness*tw*0.6*nightMix})`;c.fill();
+  });
+  
+  // Nebula
+  const nx=W*0.7+Math.sin(t*0.0001)*40;
+  const ny=H*0.25+Math.cos(t*0.00012)*25;
+  const ng=c.createRadialGradient(nx,ny,0,nx,ny,180);
+  ng.addColorStop(0,'rgba(200,100,255,0.05)');ng.addColorStop(0.5,'rgba(100,150,255,0.025)');ng.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=ng;c.fillRect(0,0,W,H);
+  
+  // Aurora
+  if(!state.eventActive){
+    c.save();c.globalAlpha=0.025;
+    for(let i=0;i<2;i++){
+      c.beginPath();c.moveTo(0,H*0.12+i*25);
+      for(let x=0;x<=W;x+=15){
+        c.lineTo(x,H*0.12+Math.sin(x*0.003+t*0.0002+i*2)*35+i*25);
+      }
+      c.lineTo(W,H*0.25);c.lineTo(0,H*0.25);c.closePath();
+      c.fillStyle=['rgba(100,255,200,1)','rgba(200,100,255,1)'][i];c.fill();
+    }
+    c.restore();
+  }
+}
+
+function renderWorld(t){
+  const c=gameCtx;
+  c.clearRect(0,0,W,H);
+  
+  // Clouds
+  clouds.forEach(cl=>{
+    cl.x+=cl.speed;
+    if(cl.x>2000)cl.x=-2000;if(cl.x<-2000)cl.x=2000;
+    const cx=(cl.x-camera.x*0.25)*camera.zoom+W/2;
+    const cy=(cl.y-200-camera.y*0.25)*camera.zoom+H/2;
+    c.save();c.globalAlpha=cl.opacity;
+    c.beginPath();c.ellipse(cx,cy,cl.w*camera.zoom,cl.h*camera.zoom,0,0,Math.PI*2);
+    c.fillStyle='rgba(200,220,255,0.3)';c.fill();
+    c.beginPath();c.ellipse(cx,cy,cl.w*0.65*camera.zoom,cl.h*0.65*camera.zoom,0,0,Math.PI*2);
+    c.fillStyle='rgba(220,230,255,0.2)';c.fill();
+    c.restore();
+  });
+  
+  // Islands
+  islands.forEach((isl,idx)=>{
+    let offY=0;
+    if(isl.floatOff!==undefined)offY=Math.sin(t*0.001*(isl.floatSpd||0.004)+isl.floatOff)*7;
+    
+    const pts=isl.pts.map(p=>w2s(p.x+isl.x,p.y+isl.y+offY));
+    const ctr=w2s(isl.x,isl.y+offY);
+    
+    // Shadow
+    c.save();c.globalAlpha=0.12;
+    c.beginPath();pts.forEach((p,i)=>i===0?c.moveTo(p.x,p.y+25*camera.zoom):c.lineTo(p.x,p.y+25*camera.zoom));
+    c.closePath();c.fillStyle='#000';c.fill();c.restore();
+    
+    // Underside
+    c.beginPath();
+    pts.forEach((p,i)=>i===0?c.moveTo(p.x,p.y):c.lineTo(p.x,p.y));
+    for(let i=pts.length-1;i>=0;i--)c.lineTo(pts[i].x,pts[i].y+35*camera.zoom);
+    c.closePath();
+    const ug=c.createLinearGradient(ctr.x,ctr.y,ctr.x,ctr.y+50*camera.zoom);
+    ug.addColorStop(0,'rgba(40,50,80,0.75)');ug.addColorStop(1,'rgba(20,25,50,0.25)');
+    c.fillStyle=ug;c.fill();
+    
+    // Surface
+    c.beginPath();pts.forEach((p,i)=>i===0?c.moveTo(p.x,p.y):c.lineTo(p.x,p.y));c.closePath();
+    const sg=c.createLinearGradient(ctr.x-80,ctr.y-40,ctr.x+80,ctr.y+40);
+    if(isl.main){
+      sg.addColorStop(0,'rgba(55,95,75,0.85)');sg.addColorStop(0.5,'rgba(65,115,85,0.9)');sg.addColorStop(1,'rgba(45,85,65,0.85)');
+    }else{
+      sg.addColorStop(0,'rgba(65,75,110,0.8)');sg.addColorStop(1,'rgba(55,65,95,0.8)');
+    }
+    c.fillStyle=sg;c.fill();
+    c.strokeStyle='rgba(180,220,255,0.2)';c.lineWidth=1.2;c.stroke();
+    
+    // Shine
+    c.save();c.globalAlpha=0.06;
+    c.beginPath();
+    const hp=pts.slice(0,Math.floor(pts.length/2));
+    hp.forEach((p,i)=>i===0?c.moveTo(p.x,p.y):c.lineTo(p.x,p.y));
+    c.lineTo(hp[hp.length-1].x,ctr.y);c.lineTo(hp[0].x,ctr.y);c.closePath();
+    c.fillStyle='#fff';c.fill();c.restore();
+  });
+  
+  // Decorations
+  decorations.sort((a,b)=>a.y-b.y);
+  decorations.forEach(d=>{
+    const sp=w2s(d.x,d.y);
+    if(sp.x<-100||sp.x>W+100||sp.y<-100||sp.y>H+100)return;
+    
+    if(d.type==='tree'){
+      const sw=Math.sin(t*0.001*d.swaySpd+d.sway)*2.5;
+      const h=d.h*camera.zoom;
+      c.beginPath();
+      c.moveTo(sp.x-2.5*camera.zoom,sp.y);
+      c.lineTo(sp.x+sw*camera.zoom-1.5*camera.zoom,sp.y-h);
+      c.lineTo(sp.x+sw*camera.zoom+1.5*camera.zoom,sp.y-h);
+      c.lineTo(sp.x+2.5*camera.zoom,sp.y);
+      c.closePath();c.fillStyle='rgba(90,120,110,0.65)';c.fill();
+      
+      const cr=(13+d.h*0.28)*camera.zoom;
+      const cx2=sp.x+sw*camera.zoom,cy2=sp.y-h-cr*0.45;
+      c.beginPath();c.arc(cx2,cy2,cr,0,Math.PI*2);
+      const tg=c.createRadialGradient(cx2-cr*0.25,cy2-cr*0.25,0,cx2,cy2,cr);
+      tg.addColorStop(0,'rgba(120,210,170,0.45)');tg.addColorStop(0.7,'rgba(70,170,120,0.35)');tg.addColorStop(1,'rgba(50,140,90,0.15)');
+      c.fillStyle=tg;c.fill();
+      c.strokeStyle='rgba(140,220,190,0.15)';c.lineWidth=0.8;c.stroke();
+    }
+    
+    if(d.type==='grass'){
+      const sw=Math.sin(t*0.0018+d.sway)*1.5;
+      c.beginPath();c.moveTo(sp.x,sp.y);
+      c.lineTo(sp.x+sw*camera.zoom,sp.y-d.size*camera.zoom);
+      c.strokeStyle='rgba(110,190,140,0.35)';c.lineWidth=1.2*camera.zoom;c.stroke();
+    }
+  });
+  
+  // Player buildings
+  state.buildings.forEach(b=>{
+    const sp=w2s(b.x,b.y);
+    c.font=`${24*camera.zoom}px sans-serif`;c.textAlign='center';c.textBaseline='bottom';
+    c.fillText(b.emoji,sp.x,sp.y);
+    c.beginPath();c.ellipse(sp.x,sp.y+4*camera.zoom,13*camera.zoom,4*camera.zoom,0,0,Math.PI*2);
+    c.fillStyle='rgba(130,200,255,0.08)';c.fill();
+  });
+  
+  // World objects
+  worldObjs.forEach(obj=>{
+    const sp=w2s(obj.x,obj.y);
+    if(sp.x<-60||sp.x>W+60||sp.y<-60||sp.y>H+60)return;
+    
+    if(obj.type==='crystal'&&!obj.collected){
+      const bob=Math.sin(t*0.003+obj.bob)*4;
+      const gl=Math.sin(t*0.005+obj.glow)*0.3+0.7;
+      const sz=obj.size*camera.zoom;
+      
+      c.save();c.globalAlpha=gl*0.25;
+      c.beginPath();c.arc(sp.x,sp.y+bob*camera.zoom,sz*1.4,0,Math.PI*2);
+      const gg=c.createRadialGradient(sp.x,sp.y+bob*camera.zoom,0,sp.x,sp.y+bob*camera.zoom,sz*1.4);
+      gg.addColorStop(0,obj.color);gg.addColorStop(1,'rgba(0,0,0,0)');
+      c.fillStyle=gg;c.fill();c.restore();
+      
+      c.beginPath();
+      c.moveTo(sp.x,sp.y+bob*camera.zoom-sz);
+      c.lineTo(sp.x+sz*0.45,sp.y+bob*camera.zoom-sz*0.15);
+      c.lineTo(sp.x+sz*0.25,sp.y+bob*camera.zoom+sz*0.45);
+      c.lineTo(sp.x-sz*0.25,sp.y+bob*camera.zoom+sz*0.45);
+      c.lineTo(sp.x-sz*0.45,sp.y+bob*camera.zoom-sz*0.15);
+      c.closePath();
+      c.fillStyle=obj.color+'77';c.fill();
+      c.strokeStyle=obj.color;c.lineWidth=1.2;c.stroke();
+      
+      c.beginPath();
+      c.moveTo(sp.x-sz*0.12,sp.y+bob*camera.zoom-sz*0.65);
+      c.lineTo(sp.x+sz*0.08,sp.y+bob*camera.zoom-sz*0.25);
+      c.lineTo(sp.x-sz*0.08,sp.y+bob*camera.zoom);
+      c.closePath();c.fillStyle='rgba(255,255,255,0.18)';c.fill();
+    }
+    
+    if(obj.type==='resource'&&!obj.collected){
+      const bob=Math.sin(t*0.003+obj.bob)*3.5;
+      c.font=`${obj.size*camera.zoom}px sans-serif`;c.textAlign='center';c.textBaseline='middle';
+      c.fillText(obj.emoji,sp.x,sp.y+bob*camera.zoom);
+      c.beginPath();c.arc(sp.x,sp.y+bob*camera.zoom,10*camera.zoom,0,Math.PI*2);
+      c.fillStyle='rgba(255,255,200,0.06)';c.fill();
+    }
+    
+    if(obj.type==='creature_spot'){
+      const bob=Math.sin(t*0.002+obj.bob)*5;
+      if(!obj.discovered){
+        const sa=Math.sin(t*0.004)*0.3+0.4;
+        c.save();c.globalAlpha=sa;
+        c.font=`${12*camera.zoom}px sans-serif`;c.textAlign='center';
+        c.fillText('✨',sp.x+Math.sin(t*0.005)*8*camera.zoom,sp.y+bob*camera.zoom);
+        c.restore();
+        c.beginPath();c.arc(sp.x,sp.y,18*camera.zoom,0,Math.PI*2);
+        c.strokeStyle=`rgba(200,180,255,${sa*0.4})`;c.lineWidth=0.8;
+        c.setLineDash([3,3]);c.stroke();c.setLineDash([]);
+      }else{
+        const cr=CREATURES.find(x=>x.id===obj.creatureId);
+        c.font=`${obj.size*camera.zoom}px sans-serif`;c.textAlign='center';c.textBaseline='middle';
+        c.fillText(cr.emoji,sp.x,sp.y+bob*camera.zoom);
+        c.font=`${8*camera.zoom}px Quicksand`;c.fillStyle='rgba(255,255,255,0.5)';
+        c.fillText(cr.name,sp.x,sp.y+bob*camera.zoom+18*camera.zoom);
+      }
+    }
+    
+    if(obj.type==='puzzle'){
+      const pulse=Math.sin(t*0.003)*0.2+0.8;
+      if(!obj.solved){
+        [0,Math.PI*0.66,Math.PI*1.33].forEach(a=>{
+          const px=sp.x+Math.cos(a+t*0.001)*16*camera.zoom;
+          const py=sp.y+Math.sin(a+t*0.001)*9*camera.zoom;
+          c.beginPath();c.arc(px,py,4*camera.zoom,0,Math.PI*2);
+          c.fillStyle=`rgba(200,150,255,${pulse*0.5})`;c.fill();
+          c.strokeStyle=`rgba(200,150,255,${pulse})`;c.lineWidth=0.8;c.stroke();
+        });
+        c.save();c.globalAlpha=pulse;
+        c.font=`${16*camera.zoom}px sans-serif`;c.textAlign='center';c.textBaseline='middle';
+        c.fillText('🧩',sp.x,sp.y);c.restore();
+      }else{
+        c.font=`${20*camera.zoom}px sans-serif`;c.textAlign='center';c.fillText('✅',sp.x,sp.y);
+      }
+    }
+    
+    if(obj.type==='secret'){
+      if(!obj.found){
+        const p=Math.sin(t*0.002)*0.3+0.45;
+        c.save();c.globalAlpha=p;
+        c.beginPath();c.arc(sp.x,sp.y,13*camera.zoom,0,Math.PI*2);
+        const sg2=c.createRadialGradient(sp.x,sp.y,0,sp.x,sp.y,13*camera.zoom);
+        sg2.addColorStop(0,'rgba(255,200,100,0.35)');sg2.addColorStop(1,'rgba(255,200,100,0)');
+        c.fillStyle=sg2;c.fill();
+        c.font=`${9*camera.zoom}px sans-serif`;c.textAlign='center';
+        c.fillText('❓',sp.x,sp.y+2*camera.zoom);c.restore();
+      }else{
+        c.font=`${18*camera.zoom}px sans-serif`;c.textAlign='center';c.fillText('🔮',sp.x,sp.y);
+      }
+    }
+    
+    if(obj.type==='portal'&&(obj.active||state.portalOpened)){
+      obj.active=true;
+      const spin=t*0.002;
+      const ps=28*camera.zoom;
+      c.save();
+      c.beginPath();c.arc(sp.x,sp.y,ps*1.4,0,Math.PI*2);
+      const pg=c.createRadialGradient(sp.x,sp.y,0,sp.x,sp.y,ps*1.4);
+      pg.addColorStop(0,'rgba(200,100,255,0.25)');pg.addColorStop(0.5,'rgba(100,150,255,0.12)');pg.addColorStop(1,'rgba(0,0,0,0)');
+      c.fillStyle=pg;c.fill();
+      for(let i=0;i<3;i++){
+        c.beginPath();
+        c.ellipse(sp.x,sp.y,ps*(1-i*0.22),ps*0.45*(1-i*0.22),spin+i*0.5,0,Math.PI*2);
+        c.strokeStyle=`rgba(${180+i*30},${100+i*30},255,${0.45-i*0.1})`;
+        c.lineWidth=(1.8-i*0.4)*camera.zoom;c.stroke();
+      }
+      c.beginPath();c.arc(sp.x,sp.y,ps*0.28,0,Math.PI*2);
+      c.fillStyle='rgba(200,150,255,0.35)';c.fill();
+      c.restore();
+    }
+  });
+  
+  // Particles
+  if(state.particlesOn){
+    particles.forEach(p=>{
+      p.x+=p.sx;p.y+=p.sy;p.life++;
+      if(p.y<-400||p.life>1800){
+        p.x=camera.x+(Math.random()-0.5)*W/camera.zoom;
+        p.y=camera.y+H/2/camera.zoom;p.life=0;
+      }
+      const sp=w2s(p.x,p.y);
+      if(sp.x>=-5&&sp.x<=W+5&&sp.y>=-5&&sp.y<=H+5){
+        c.beginPath();c.arc(sp.x,sp.y,p.size*camera.zoom,0,Math.PI*2);
+        const alpha=Math.floor(p.opacity*255).toString(16).padStart(2,'0');
+        c.fillStyle=p.color+alpha;c.fill();
+      }
+    });
+  }
+  
+  // Hover ring
+  if(hovered){
+    const sp=w2s(hovered.x,hovered.y);
+    c.beginPath();c.arc(sp.x,sp.y,(hovered.size+8)*camera.zoom,0,Math.PI*2);
+    c.strokeStyle='rgba(255,255,255,0.12)';c.lineWidth=1.5;
+    c.setLineDash([3,3]);c.stroke();c.setLineDash([]);
+  }
+}
+
+// ===== GAME LOOP =====
+function loop(ts){
+  frame=ts;
+  camera.x+=(camera.tx-camera.x)*0.07;
+  camera.y+=(camera.ty-camera.y)*0.07;
+  
+  renderBG(ts);
+  if(running){
+    renderWorld(ts);
+    update(ts);
+  }
+  requestAnimationFrame(loop);
+}
+
+function update(t){
+  // Respawn resources
+  worldObjs.forEach(o=>{
+    if(o.type==='resource'&&o.collected){
+      o.respawn++;
+      if(o.respawn>500){o.collected=false;o.respawn=0;}
+    }
+  });
+  
+  // Mystery hints
+  if(state.totalCollected===5&&!state.hints.h1){
+    state.hints.h1=true;
+    showNotif('Something is hiding in the forest... 🌿','mystery');
+  }
+  if(state.totalCollected===15&&!state.hints.h2&&!state.portalOpened){
+    state.hints.h2=true;
+    showNotif('An unknown energy has been detected... 🔮','mystery');
+  }
+  
+  // Events
+  if(!state.eventActive&&Math.random()<0.00008&&state.level>=2)triggerEvent();
+  if(state.eventActive){
+    state.eventTimer--;
+    const s=Math.ceil(state.eventTimer/60);
+    document.getElementById('eventTimer').textContent=`⚡ Event: ${s}s`;
+    if(state.eventTimer<=0){
+      state.eventActive=false;
+      document.getElementById('eventTimer').classList.remove('visible');
+      document.getElementById('skyCrack').classList.remove('visible');
+      document.getElementById('skyCrack').innerHTML='';
+    }
+  }
+  
+  // Day/night indicator
+  if(state.dayNightOn){
+    const phase=dayTime<0.5?'🌙 Night':'☀️ Day';
+    document.getElementById('timeIndicator').textContent=phase;
+  }
+  
+  // Check achievements
+  checkAchievements();
+  
+  // Update HUD
+  document.getElementById('crystalCount').textContent=state.crystals;
+  document.getElementById('starCount').textContent=state.stars;
+  document.getElementById('xpDisplay').textContent=`Lv ${state.level}`;
+  document.getElementById('xpBar').style.width=`${(state.xp/state.xpToNext)*100}%`;
+  
+  // Auto save every ~30s
+  if(Math.floor(t/30000)!==Math.floor((t-16)/30000))saveGame();
+}
+
+// ===== INPUT =====
+function setupInput(){
+  const cv=gameCanvas;
+  
+  cv.addEventListener('mousedown',e=>{isDrag=true;dragS={x:e.clientX,y:e.clientY};camDragS={x:camera.tx,y:camera.ty}});
+  cv.addEventListener('mousemove',e=>{
+    mouse={x:e.clientX,y:e.clientY};
+    if(isDrag){
+      camera.tx=camDragS.x-(e.clientX-dragS.x)/camera.zoom;
+      camera.ty=camDragS.y-(e.clientY-dragS.y)/camera.zoom;
+    }
+    if(running)checkHover(e.clientX,e.clientY);
+  });
+  cv.addEventListener('mouseup',e=>{
+    if(Math.abs(e.clientX-dragS.x)<6&&Math.abs(e.clientY-dragS.y)<6)handleClick(e.clientX,e.clientY);
+    isDrag=false;
+  });
+  cv.addEventListener('wheel',e=>{
+    e.preventDefault();
+    camera.zoom=Math.max(0.35,Math.min(2.5,camera.zoom*(e.deltaY>0?0.92:1.08)));
+  },{passive:false});
+  
+  // Touch
+  let tDist=0;
+  cv.addEventListener('touchstart',e=>{
+    if(e.touches.length===1){
+      isDrag=true;dragS={x:e.touches[0].clientX,y:e.touches[0].clientY};
+      camDragS={x:camera.tx,y:camera.ty};
+    }
+    if(e.touches.length===2){
+      tDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    }
+  });
+  cv.addEventListener('touchmove',e=>{
+    e.preventDefault();
+    if(e.touches.length===1&&isDrag){
+      camera.tx=camDragS.x-(e.touches[0].clientX-dragS.x)/camera.zoom;
+      camera.ty=camDragS.y-(e.touches[0].clientY-dragS.y)/camera.zoom;
+    }
+    if(e.touches.length===2){
+      const nd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      camera.zoom=Math.max(0.35,Math.min(2.5,camera.zoom*nd/tDist));
+      tDist=nd;
+    }
+  },{passive:false});
+  cv.addEventListener('touchend',e=>{
+    if(e.changedTouches.length===1&&isDrag){
+      const dx=Math.abs(e.changedTouches[0].clientX-dragS.x);
+      const dy=Math.abs(e.changedTouches[0].clientY-dragS.y);
+      if(dx<12&&dy<12)handleClick(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
+    }
+    isDrag=false;
+  });
+}
+
+function checkHover(sx,sy){
+  const wp=s2w(sx,sy);
+  hovered=null;
+  let hint='';
+  
+  worldObjs.forEach(o=>{
+    const d=Math.hypot(wp.x-o.x,wp.y-o.y);
+    const hr=(o.size||18)+12;
+    if(d<hr){
+      if(o.type==='crystal'&&!o.collected){hovered=o;hint='💎 Tap to collect'}
+      else if(o.type==='resource'&&!o.collected){hovered=o;hint=`${o.emoji} Tap to gather`}
+      else if(o.type==='creature_spot'&&!o.discovered){hovered=o;hint=o.hint}
+      else if(o.type==='creature_spot'&&o.discovered){
+        hovered=o;const cr=CREATURES.find(x=>x.id===o.creatureId);hint=`${cr.emoji} ${cr.name}`}
+      else if(o.type==='puzzle'&&!o.solved){hovered=o;hint=o.hint}
+      else if(o.type==='secret'&&!o.found){hovered=o;hint=o.hint}
+      else if(o.type==='portal'&&o.active&&!state.portalEntered){hovered=o;hint='🌀 Tap to enter portal'}
+    }
+  });
+  
+  const el=document.getElementById('interactHint');
+  if(hint){el.textContent=hint;el.classList.add('visible')}
+  else el.classList.remove('visible');
+}
+
+function handleClick(sx,sy){
+  Audio.click();haptic('light');
+  const wp=s2w(sx,sy);
+  let best=null,bestD=Infinity;
+  
+  worldObjs.forEach(o=>{
+    const d=Math.hypot(wp.x-o.x,wp.y-o.y);
+    if(d<(o.size||18)+15&&d<bestD){bestD=d;best=o;}
+  });
+  
+  if(!best)return;
+  
+  if(best.type==='crystal'&&!best.collected)collectCrystal(best,sx,sy);
+  else if(best.type==='resource'&&!best.collected)collectResource(best,sx,sy);
+  else if(best.type==='creature_spot'&&!best.discovered)discoverCreature(best);
+  else if(best.type==='puzzle'&&!best.solved)openPuzzle();
+  else if(best.type==='secret'&&!best.found)findSecret(best);
+  else if(best.type==='portal'&&best.active&&!state.portalEntered)openPortalOverlay();
+}
+
+// ===== GAME ACTIONS =====
+function collectCrystal(obj,sx,sy){
+  obj.collected=true;
+  state.crystals++;state.totalCollected++;
+  state.inventory.crystal_shard=(state.inventory.crystal_shard||0)+1;
+  addXP(5);
+  Audio.collect();haptic('light');
+  floatText(sx,sy,'+1 💎');
+  checkQuests();
+}
+
+function collectResource(obj,sx,sy){
+  obj.collected=true;obj.respawn=0;
+  const amt=1+Math.floor(Math.random()*2);
+  state.inventory[obj.resource]=(state.inventory[obj.resource]||0)+amt;
+  state.totalCollected++;state.totalGathered++;
+  addXP(3);
+  Audio.collect();haptic('light');
+  floatText(sx,sy,`+${amt} ${obj.emoji}`);
+  if(Math.random()<0.25){
+    state.stars++;
+    setTimeout(()=>floatText(sx,sy-25,'+1 ⭐'),250);
+  }
+  checkQuests();
+}
+
+function discoverCreature(spot){
+  spot.discovered=true;
+  const cr=CREATURES.find(c=>c.id===spot.creatureId);
+  state.creatures[cr.id]=true;
+  
+  Audio.discover();haptic('heavy');
+  
+  document.getElementById('discoveryEmoji').textContent=cr.emoji;
+  document.getElementById('discoveryTitle').textContent=cr.name.toUpperCase();
+  document.getElementById('discoveryRarity').className=`discovery-rarity rarity-${cr.rarity}`;
+  document.getElementById('discoveryRarity').textContent=cr.rarity.toUpperCase();
+  document.getElementById('discoverySubtitle').textContent=cr.desc;
+  document.getElementById('discoveryRewards').textContent=`+${cr.xp} XP  +${cr.stars} ⭐`;
+  document.getElementById('discoveryPopup').classList.add('visible');
+  
+  addXP(cr.xp);state.stars+=cr.stars;
+  showNotif(`New creature discovered: ${cr.emoji} ${cr.name}!`,'discovery');
+  
+  // Attract new creatures
+  const count=Object.keys(state.creatures).length;
+  if(count>=3&&!state.hints.dreamfly){
+    state.hints.dreamfly=true;
+    setTimeout(()=>{
+      worldObjs.push({type:'creature_spot',creatureId:'dreamfly',x:45,y:195,size:24,discovered:false,
+        hint:'A luminescent presence draws near...',bob:3});
+      showNotif('Your creatures have attracted something new... 🦋','mystery');
+    },2500);
+  }
+  if(count>=4&&!state.hints.glacera_hint){
+    state.hints.glacera_hint=true;
+    setTimeout(()=>{
+      showNotif('Legends speak of an ancient being in the portal dimension... 🐉','mystery');
+    },3000);
+  }
+  checkQuests();
+}
+
+function findSecret(obj){
+  obj.found=true;state.secretFound=true;
+  Audio.discover();haptic('heavy');
+  addXP(50);state.stars+=5;state.crystals+=10;
+  showNotif('🔮 SECRET AREA DISCOVERED! Ancient ruins revealed!','discovery');
+  
+  // Bonus crystals
+  for(let i=0;i<6;i++){
+    worldObjs.push({
+      type:'crystal',x:obj.x+(Math.random()-0.5)*70,y:obj.y+(Math.random()-0.5)*35,
+      size:13+Math.random()*7,color:'#ffc882',collected:false,
+      bob:Math.random()*Math.PI*2,glow:Math.random()*Math.PI*2
+    });
+  }
+  // Void fragments
+  state.inventory.void_fragment=(state.inventory.void_fragment||0)+2;
+  state.inventory.ancient_rune=(state.inventory.ancient_rune||0)+1;
+  
+  if(!state.portalOpened){
+    setTimeout(()=>{
+      state.portalOpened=true;
+      showNotif('A mysterious portal has opened on your island... 🌀','mystery');
+      Audio.portal();
+    },2000);
+  }
+  checkQuests();
+}
+
+// ===== PUZZLE =====
+function openPuzzle(){
+  if(state.puzzleSolved)return;
+  puzzleSeq=[];
+  for(let i=0;i<4;i++)puzzleSeq.push(Math.floor(Math.random()*9));
+  playerSeq=[];puzzlePhase='showing';puzzleShowIdx=0;
+  
+  const grid=document.getElementById('puzzleGrid');
+  grid.innerHTML='';
+  for(let i=0;i<9;i++){
+    const cell=document.createElement('div');
+    cell.className='puzzle-cell glass';cell.textContent=puzzleSym[i];
+    cell.dataset.idx=i;
+    cell.addEventListener('click',()=>puzzleClick(i,cell));
+    cell.addEventListener('touchend',e=>{e.preventDefault();puzzleClick(i,cell)});
+    grid.appendChild(cell);
+  }
+  document.getElementById('puzzleHint').textContent='Watch the pattern carefully...';
+  document.getElementById('puzzleOverlay').classList.add('visible');
+  setTimeout(()=>showPuzzleSeq(),700);
+}
+
+function showPuzzleSeq(){
+  if(puzzleShowIdx>=puzzleSeq.length){
+    puzzlePhase='input';
+    document.getElementById('puzzleHint').textContent='Now repeat the pattern!';
+    return;
+  }
+  const cells=document.querySelectorAll('.puzzle-cell');
+  const idx=puzzleSeq[puzzleShowIdx];
+  cells[idx].classList.add('selected');
+  Audio.note(400+idx*75,0.25);
+  
+  setTimeout(()=>{
+    cells[idx].classList.remove('selected');
+    puzzleShowIdx++;
+    setTimeout(()=>showPuzzleSeq(),280);
+  },450);
+}
+
+function puzzleClick(idx,cell){
+  if(puzzlePhase!=='input')return;
+  playerSeq.push(idx);
+  const step=playerSeq.length-1;
+  
+  if(idx===puzzleSeq[step]){
+    cell.classList.add('correct');haptic('light');
+    Audio.note(400+idx*75,0.18);
+    setTimeout(()=>cell.classList.remove('correct'),350);
+    
+    if(playerSeq.length===puzzleSeq.length){
+      puzzlePhase='done';state.puzzleSolved=true;
+      Audio.puzzleOk();haptic('medium');
+      document.getElementById('puzzleHint').textContent='✨ PUZZLE SOLVED! ✨';
+      addXP(40);state.stars+=5;state.crystals+=5;
+      
+      const po=worldObjs.find(o=>o.type==='puzzle');if(po)po.solved=true;
+      
+      if(!state.portalOpened){
+        setTimeout(()=>{
+          state.portalOpened=true;
+          showNotif('A mysterious portal has appeared! 🌀','mystery');
+          Audio.portal();
+        },1200);
+      }
+      setTimeout(()=>closePuzzle(),1800);
+      checkQuests();
+    }
+  }else{
+    cell.classList.add('wrong');
+    Audio.puzzleFail();haptic('medium');
+    setTimeout(()=>{
+      cell.classList.remove('wrong');
+      playerSeq=[];puzzlePhase='showing';puzzleShowIdx=0;
+      document.getElementById('puzzleHint').textContent='Try again! Watch carefully...';
+      setTimeout(()=>showPuzzleSeq(),700);
+    },550);
+  }
+}
+
+function closePuzzle(){document.getElementById('puzzleOverlay').classList.remove('visible')}
+
+// ===== PORTAL =====
+function openPortalOverlay(){Audio.portal();haptic('heavy');document.getElementById('portalOverlay').classList.add('visible')}
+
+function enterPortal(){
+  state.portalEntered=true;
+  document.getElementById('portalOverlay').classList.remove('visible');
+  showNotif('🌀 You entered the portal! Mysterious treasures found!','discovery');
+  haptic('heavy');
+  state.crystals+=20;state.stars+=10;
+  state.inventory.dream_essence=(state.inventory.dream_essence||0)+3;
+  state.inventory.moon_stone=(state.inventory.moon_stone||0)+2;
+  state.inventory.void_fragment=(state.inventory.void_fragment||0)+3;
+  addXP(100);
+  
+  if(!state.creatures.glacera){
+    setTimeout(()=>{
+      worldObjs.push({type:'creature_spot',creatureId:'glacera',x:5,y:-25,size:28,
+        discovered:false,hint:'An ancient ice presence stirs...',bob:4});
+      showNotif('The portal has attracted something ancient... 🐉','mystery');
+    },2000);
+  }
+  checkQuests();
+}
+
+function closePortal(){document.getElementById('portalOverlay').classList.remove('visible')}
+
+// ===== SKY EVENT =====
+function triggerEvent(){
+  if(state.eventActive)return;
+  state.eventActive=true;state.eventTimer=60*25;
+  Audio.event();haptic('heavy');
+  showNotif('⚡ THE SKY IS CRACKING...','event');
+  
+  document.getElementById('eventTimer').classList.add('visible');
+  const sc=document.getElementById('skyCrack');sc.innerHTML='';
+  for(let i=0;i<7;i++){
+    const crack=document.createElement('div');
+    crack.className='crack-line';
+    crack.style.cssText=`left:${15+Math.random()*70}%;top:${Math.random()*25}%;height:${40+Math.random()*90}px;transform:rotate(${(Math.random()-0.5)*25}deg);animation-delay:${Math.random()*2}s`;
+    sc.appendChild(crack);
+  }
+  sc.classList.add('visible');
+  
+  for(let i=0;i<7;i++){
+    const a=Math.random()*Math.PI*2,d=Math.random()*180;
+    worldObjs.push({
+      type:'crystal',x:camera.x+Math.cos(a)*d,y:camera.y+Math.sin(a)*d,
+      size:14+Math.random()*9,color:'#ff82c8',collected:false,
+      bob:Math.random()*Math.PI*2,glow:Math.random()*Math.PI*2,eventCrystal:true
+    });
+  }
+}
+
+// ===== PROGRESSION =====
+function addXP(amt){
+  state.xp+=amt;
+  while(state.xp>=state.xpToNext){
+    state.xp-=state.xpToNext;state.level++;
+    state.xpToNext=Math.floor(state.xpToNext*1.45);
+    showNotif(`⬆️ Level Up! You are now Level ${state.level}!`,'reward');
+    Audio.discover();haptic('heavy');
+    state.stars+=state.level;
+  }
+}
+
+// ===== QUESTS =====
+function getQuestProgress(q){
+  switch(q.type){
+    case'collect':return Math.min(state.totalCollected,q.target);
+    case'creature':return Math.min(Object.keys(state.creatures).length,q.target);
+    case'puzzle':return state.puzzleSolved?1:0;
+    case'build':return Math.min(state.buildCount,q.target);
+    case'secret':return state.secretFound?1:0;
+    case'portal':return state.portalEntered?1:0;
+    case'level':return Math.min(state.level,q.target);
+    case'gather':return Math.min(state.totalGathered,q.target);
+    default:return 0;
+  }
+}
+
+function checkQuests(){}// Quests checked on render
+
+function claimQuest(qid){
+  const q=QUESTS.find(x=>x.id===qid);
+  if(!q||state.questsClaimed[qid])return;
+  const prog=getQuestProgress(q);
+  if(prog<q.target)return;
+  
+  state.questsClaimed[qid]=true;
+  if(q.reward.stars)state.stars+=q.reward.stars;
+  if(q.reward.xp)addXP(q.reward.xp);
+  Audio.collect();haptic('medium');
+  showNotif(`Quest Complete: ${q.icon} ${q.name}! +${q.reward.stars}⭐`,'reward');
+  renderQuestList();
+}
+
+// ===== ACHIEVEMENTS =====
+function checkAchievements(){
+  ACHIEVEMENTS.forEach(a=>{
+    if(state.achievements[a.id])return;
+    if(a.check(state)){
+      state.achievements[a.id]=true;
+      showAchievement(a);
+    }
+  });
+}
+
+function showAchievement(ach){
+  Audio.achievement();haptic('medium');
+  document.getElementById('achIcon').textContent='🏆';
+  document.getElementById('achText').textContent=ach.name;
+  const el=document.getElementById('achievementPopup');
+  el.classList.add('visible');
+  clearTimeout(achTimer);
+  achTimer=setTimeout(()=>el.classList.remove('visible'),4000);
+}
+
+// ===== BUILDING =====
+function buildItem(item){
+  if(state.crystals<item.cost){showNotif('Not enough crystals! 💎','mystery');return}
+  if(item.unlock&&state.level<item.unlock){showNotif(`Unlock at Level ${item.unlock}`,'mystery');return}
+  
+  state.crystals-=item.cost;state.buildCount++;
+  const a=Math.random()*Math.PI*2,d=40+Math.random()*140;
+  state.buildings.push({id:item.id,emoji:item.emoji,x:Math.cos(a)*d,y:100+Math.sin(a)*d*0.5});
+  
+  Audio.build();haptic('medium');
+  addXP(15);
+  showNotif(`Built ${item.emoji} ${item.name}!`,'reward');
+  renderBuildGrid();checkQuests();
+}
+
+// ===== MAP =====
+function openMap(){
+  Audio.click();
+  const map=document.getElementById('mapIsland');
+  map.innerHTML='';
+  
+  // Map points
+  const mapData=[
+    {x:50,y:50,label:'Center',type:'current'},
+    {x:72,y:35,label:'Puzzle',type:state.puzzleSolved?'visited':'unknown'},
+    {x:22,y:45,label:'Secret',type:state.secretFound?'visited':'unknown'},
+    {x:50,y:25,label:'Portal',type:state.portalOpened?'visited':'unknown'},
+    {x:65,y:60,label:'Lumicat',type:state.creatures.lumicat?'visited':'unknown'},
+    {x:30,y:65,label:'Bubblefrog',type:state.creatures.bubblefrog?'visited':'unknown'},
+    {x:45,y:30,label:'Foxel',type:state.creatures.foxel?'visited':'unknown'},
+  ];
+  
+  mapData.forEach(p=>{
+    const pt=document.createElement('div');
+    pt.className=`map-point ${p.type}`;
+    pt.style.left=p.x+'%';pt.style.top=p.y+'%';
+    
+    const lbl=document.createElement('div');
+    lbl.className='map-label';
+    lbl.textContent=p.type==='unknown'?'???':p.label;
+    lbl.style.left='50%';lbl.style.top='100%';
+    pt.appendChild(lbl);
+    map.appendChild(pt);
+  });
+  
+  document.getElementById('mapOverlay').classList.add('visible');
+}
+
+function closeMap(){document.getElementById('mapOverlay').classList.remove('visible')}
+
+// ===== UI RENDERING =====
+function renderCreatureGrid(){
+  const grid=document.getElementById('creatureGrid');grid.innerHTML='';
+  const discovered=Object.keys(state.creatures).length;
+  document.getElementById('creatureStats').textContent=`Discovered: ${discovered}/${CREATURES.length}`;
+  
+  CREATURES.forEach(cr=>{
+    const found=state.creatures[cr.id];
+    const card=document.createElement('div');
+    card.className=`creature-card glass ${found?'':'undiscovered'}`;
+    card.innerHTML=`
+      <span class="creature-emoji">${cr.emoji}</span>
+      <div class="creature-name">${found?cr.name:'???'}</div>
+      <div class="creature-rarity rarity-${cr.rarity}">${cr.rarity}</div>
+    `;
+    if(found)card.onclick=()=>{
+      document.getElementById('discoveryEmoji').textContent=cr.emoji;
+      document.getElementById('discoveryTitle').textContent=cr.name.toUpperCase();
+      document.getElementById('discoveryRarity').className=`discovery-rarity rarity-${cr.rarity}`;
+      document.getElementById('discoveryRarity').textContent=cr.rarity.toUpperCase();
+      document.getElementById('discoverySubtitle').textContent=cr.desc;
+      document.getElementById('discoveryRewards').textContent='';
+      document.getElementById('discoveryPopup').classList.add('visible');
+    };
+    grid.appendChild(card);
+  });
+}
+
+function renderInventoryGrid(){
+  const grid=document.getElementById('inventoryGrid');grid.innerHTML='';
+  let hasItems=false;
+  Object.entries(state.inventory).forEach(([k,v])=>{
+    if(v>0&&ITEMS[k]){
+      hasItems=true;
+      const d=document.createElement('div');
+      d.className='inv-item glass';
+      d.innerHTML=`<span class="inv-emoji">${ITEMS[k].emoji}</span><span class="inv-count">×${v}</span><span class="inv-name">${ITEMS[k].name}</span>`;
+      grid.appendChild(d);
+    }
+  });
+  if(!hasItems)grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-secondary);padding:25px;font-size:0.85rem">No items yet. Explore and collect!</div>';
+}
+
+function renderBuildGrid(){
+  // Tabs
+  const tabs=document.getElementById('buildTabs');
+  tabs.innerHTML='';
+  ['structures','nature','decor'].forEach(t=>{
+    const btn=document.createElement('button');
+    btn.className=`glass-btn tab-btn ${t===buildTab?'active':''}`;
+    btn.textContent=t.charAt(0).toUpperCase()+t.slice(1);
+    btn.onclick=()=>{buildTab=t;renderBuildGrid()};
+    tabs.appendChild(btn);
+  });
+  
+  const grid=document.getElementById('buildGrid');grid.innerHTML='';
+  (BUILDINGS[buildTab]||[]).forEach(item=>{
+    const locked=item.unlock&&state.level<item.unlock;
+    const afford=state.crystals>=item.cost;
+    const d=document.createElement('div');
+    d.className=`build-item glass ${locked?'locked':''} ${!locked&&!afford?'cant-afford':''}`;
+    d.innerHTML=`
+      <span class="build-emoji">${locked?'🔒':item.emoji}</span>
+      <div class="build-name">${item.name}</div>
+      <div class="build-cost">${locked?`Lv ${item.unlock}`:`💎 ${item.cost}`}</div>
+    `;
+    if(!locked)d.onclick=()=>buildItem(item);
+    grid.appendChild(d);
+  });
+}
+
+function renderQuestList(){
+  const list=document.getElementById('questList');list.innerHTML='';
+  QUESTS.forEach(q=>{
+    const prog=getQuestProgress(q);
+    const done=prog>=q.target;
+    const claimed=state.questsClaimed[q.id];
+    const pct=Math.min(100,(prog/q.target)*100);
+    
+    const d=document.createElement('div');
+    d.className=`quest-item glass ${claimed?'completed':''}`;
+    
+    let actionHTML='';
+    if(done&&!claimed){
+      actionHTML=`<button class="glass-btn quest-claim" onclick="G.claimQuest('${q.id}')">Claim</button>`;
+    }else{
+      actionHTML=`<div class="quest-progress"><div class="quest-fill" style="width:${pct}%"></div></div>`;
+    }
+    
+    d.innerHTML=`
+      <span class="quest-icon">${claimed?'✅':q.icon}</span>
+      <div class="quest-info">
+        <div class="quest-name">${q.name}</div>
+        <div class="quest-desc">${q.desc} (${prog}/${q.target})</div>
+        <div class="quest-reward">Reward: +${q.reward.stars}⭐ +${q.reward.xp}XP</div>
+      </div>
+      ${actionHTML}
+    `;
+    list.appendChild(d);
+  });
+}
+
+function renderWorldGrid(){
+  const grid=document.getElementById('worldGrid');grid.innerHTML='';
+  WORLDS.forEach(w=>{
+    const unlocked=!w.locked||(w.req&&state.level>=w.req);
+    const card=document.createElement('div');
+    card.className=`world-card glass ${w.locked&&!unlocked?'locked':''} ${w.id==='dream_garden'?'active':''}`;
+    card.innerHTML=`
+      <span class="world-emoji">${w.emoji}</span>
+      <div class="world-name">${w.name}</div>
+      <div class="world-status">${w.locked&&!unlocked?'🔒 '+w.status:w.status}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ===== MODAL SYSTEM =====
+function openModal(name){
+  Audio.click();haptic('light');
+  switch(name){
+    case'creatures':renderCreatureGrid();break;
+    case'inventory':renderInventoryGrid();break;
+    case'build':renderBuildGrid();break;
+    case'quests':renderQuestList();break;
+    case'worlds':renderWorldGrid();break;
+  }
+  document.getElementById(`modal-${name}`).classList.add('visible');
+}
+function closeModal(name){Audio.click();document.getElementById(`modal-${name}`).classList.remove('visible')}
+function closeModalBg(e,name){if(e.target===e.currentTarget)closeModal(name)}
+function closeDiscovery(){Audio.click();document.getElementById('discoveryPopup').classList.remove('visible')}
+
+// ===== NOTIFICATIONS =====
+function showNotif(text,type='discovery'){
+  const el=document.getElementById('notification');
+  el.textContent=text;el.className=`notification glass ${type}`;
+  el.offsetHeight;el.classList.add('show');
+  clearTimeout(notifTimer);
+  notifTimer=setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+function floatText(x,y,text){
+  const el=document.createElement('div');
+  el.className='float-collect';el.textContent=text;
+  el.style.left=x+'px';el.style.top=y+'px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1200);
+}
+
+// ===== SETTINGS =====
+function setMusicVol(v){Audio.setVol(v/100)}
+function toggleSfx(){state.sfxOn=!state.sfxOn;document.getElementById('sfxToggle').classList.toggle('on',state.sfxOn)}
+function toggleHaptic(){state.hapticOn=!state.hapticOn;document.getElementById('hapticToggle').classList.toggle('on',state.hapticOn)}
+function toggleParticles(){state.particlesOn=!state.particlesOn;document.getElementById('particleToggle').classList.toggle('on',state.particlesOn)}
+function toggleDayNight(){
+  state.dayNightOn=!state.dayNightOn;
+  document.getElementById('dayNightToggle').classList.toggle('on',state.dayNightOn);
+  document.getElementById('timeIndicator').classList.toggle('visible',state.dayNightOn&&running);
+}
+
+function resetProgress(){
+  if(confirm('Reset all progress? This cannot be undone.')){
+    state={crystals:0,stars:0,xp:0,level:1,xpToNext:50,
+      creatures:{},inventory:{},buildings:[],questsClaimed:{},
+      puzzleSolved:false,portalOpened:false,portalEntered:false,
+      secretFound:false,eventActive:false,eventTimer:0,
+      particlesOn:true,sfxOn:true,hapticOn:true,dayNightOn:true,musicVol:0.6,
+      totalCollected:0,totalGathered:0,buildCount:0,
+      achievements:{},hints:{},timeStarted:Date.now()};
+    generateWorld();
+    showNotif('Progress reset','mystery');
+    saveGame();
+  }
+}
+
+// ===== SAVE/LOAD =====
+function saveGame(){
+  try{
+    const json=JSON.stringify(state);
+    if(window.AndroidBridge)AndroidBridge.saveState(json);
+    else localStorage.setItem('glassverse_save',json);
+  }catch(e){}
+}
+
+function loadGame(){
+  try{
+    let json='';
+    if(window.AndroidBridge)json=AndroidBridge.loadState();
+    else json=localStorage.getItem('glassverse_save')||'';
+    if(json){
+      const saved=JSON.parse(json);
+      Object.assign(state,saved);
+      // Restore objects state
+      if(state.puzzleSolved){const po=worldObjs.find(o=>o.type==='puzzle');if(po)po.solved=true}
+      if(state.secretFound){const so=worldObjs.find(o=>o.type==='secret');if(so)so.found=true}
+      if(state.portalOpened){const pr=worldObjs.find(o=>o.type==='portal');if(pr)pr.active=true}
+      // Restore creature discoveries
+      Object.keys(state.creatures).forEach(cid=>{
+        const spot=worldObjs.find(o=>o.type==='creature_spot'&&o.creatureId===cid);
+        if(spot)spot.discovered=true;
+      });
+      // Add late-game creature spots if needed
+      if(Object.keys(state.creatures).length>=3&&!worldObjs.find(o=>o.creatureId==='dreamfly')){
+        worldObjs.push({type:'creature_spot',creatureId:'dreamfly',x:45,y:195,size:24,
+          discovered:!!state.creatures.dreamfly,hint:'A luminescent presence draws near...',bob:3});
+      }
+      if(state.portalEntered&&!worldObjs.find(o=>o.creatureId==='glacera')){
+        worldObjs.push({type:'creature_spot',creatureId:'glacera',x:5,y:-25,size:28,
+          discovered:!!state.creatures.glacera,hint:'An ancient ice presence stirs...',bob:4});
+      }
+    }
+  }catch(e){console.log('Load error:',e)}
+}
+
+// Bridge functions for Android
+window.getGameState=()=>state;
+window.loadSavedState=(json)=>{
+  try{
+    const saved=JSON.parse(json);
+    Object.assign(state,saved);
+  }catch(e){}
+};
+window.handleBackPress=()=>{
+  // Check if any modal is open
+  const modals=['creatures','inventory','build','quests','settings','worlds'];
+  for(const m of modals){
+    const el=document.getElementById(`modal-${m}`);
+    if(el.classList.contains('visible')){closeModal(m);return false}
+  }
+  if(document.getElementById('puzzleOverlay').classList.contains('visible')){closePuzzle();return false}
+  if(document.getElementById('portalOverlay').classList.contains('visible')){closePortal();return false}
+  if(document.getElementById('mapOverlay').classList.contains('visible')){closeMap();return false}
+  if(document.getElementById('discoveryPopup').classList.contains('visible')){closeDiscovery();return false}
+  if(running){backToMenu();return false}
+  return true;
+};
+
+// ===== GAME START =====
+function startGame(){
+  Audio.ensure();Audio.startMusic();Audio.click();
+  document.getElementById('mainMenu').classList.add('hidden');
+  document.getElementById('hud').classList.add('visible');
+  document.getElementById('bottomBar').classList.add('visible');
+  if(state.dayNightOn)document.getElementById('timeIndicator').classList.add('visible');
+  running=true;
+  camera.tx=0;camera.ty=80;camera.zoom=1;
+  
+  setTimeout(()=>showNotif('Welcome to Dream Garden! Explore and discover ✨','discovery'),800);
+}
+
+function backToMenu(){
+  Audio.click();saveGame();
+  document.getElementById('mainMenu').classList.remove('hidden');
+  document.getElementById('hud').classList.remove('visible');
+  document.getElementById('bottomBar').classList.remove('visible');
+  document.getElementById('timeIndicator').classList.remove('visible');
+  running=false;
+}
+
+// ===== INIT =====
+function init(){
+  initCanvas();
+  generateWorld();
+  loadGame();
+  setupInput();
+  requestAnimationFrame(loop);
+  
+  document.addEventListener('click',()=>Audio.ensure(),{once:true});
+  document.addEventListener('touchstart',()=>Audio.ensure(),{once:true});
+}
+
+init();
+
+// Public API
+return{
+  startGame,backToMenu,
+  openModal,closeModal,closeModalBg,closeDiscovery,
+  enterPortal,closePortal,closePuzzle,
+  openMap,closeMap,
+  claimQuest,
+  setMusicVol,toggleSfx,toggleHaptic,toggleParticles,toggleDayNight,
+  resetProgress
+};
+
+})();
+</script>
+</body>
+</html>

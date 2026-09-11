@@ -1,0 +1,14 @@
+<!-- app/src/main/res/drawable/splash_background.xml -->
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#FF080818"
+                android:centerColor="#FF0D1030"
+                android:endColor="#FF0A1828"
+                android:angle="270"
+                android:type="linear" />
+        </shape>
+    </item>
+</layer-list>

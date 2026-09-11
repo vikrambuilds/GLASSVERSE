@@ -1,0 +1,38 @@
+<!-- app/src/main/res/drawable/ic_launcher_foreground.xml -->
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Crystal shape -->
+    <path
+        android:pathData="M54,20 L72,45 L66,80 L42,80 L36,45 Z"
+        android:fillColor="#82C8FF"
+        android:fillAlpha="0.9" />
+
+    <!-- Inner shine -->
+    <path
+        android:pathData="M48,28 L58,42 L52,60 Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.25" />
+
+    <!-- Small crystal left -->
+    <path
+        android:pathData="M30,50 L38,40 L40,58 L34,62 Z"
+        android:fillColor="#C882FF"
+        android:fillAlpha="0.7" />
+
+    <!-- Small crystal right -->
+    <path
+        android:pathData="M70,48 L78,42 L76,60 L68,58 Z"
+        android:fillColor="#82FFC8"
+        android:fillAlpha="0.7" />
+
+    <!-- Glow circle -->
+    <path
+        android:pathData="M54,50m-18,0a18,18 0,1 1,36 0a18,18 0,1 1,-36 0"
+        android:fillColor="#82C8FF"
+        android:fillAlpha="0.08" />
+</vector>

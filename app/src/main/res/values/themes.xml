@@ -1,0 +1,20 @@
+<!-- app/src/main/res/values/themes.xml -->
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Glassverse" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@color/deep_space</item>
+        <item name="android:navigationBarColor">@color/deep_space</item>
+        <item name="android:windowBackground">@color/deep_space</item>
+        <item name="colorPrimary">@color/glass_blue</item>
+        <item name="colorPrimaryVariant">@color/glass_purple</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/glass_purple</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="android:fontFamily">sans-serif-light</item>
+    </style>
+
+    <style name="Theme.Glassverse.Splash" parent="Theme.Glassverse">
+        <item name="android:windowBackground">@color/splash_bg</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+</resources>
